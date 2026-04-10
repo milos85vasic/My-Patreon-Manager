@@ -53,3 +53,10 @@ The repo mirrors to four Git hosting services. Push scripts live in `Upstreams/`
 - `joho/godotenv` for `.env` loading
 - SQLite (default) or PostgreSQL for state storage
 - `chromedp` or WeasyPrint for PDF generation
+
+## Active Technologies
+- Go 1.26.1 + Gin (HTTP), google/go-github (GitHub API), (001-patreon-manager-app)
+- SQLite (default), PostgreSQL (production option) (001-patreon-manager-app)
+
+## Recent Changes
+- 001-patreon-manager-app: Added Go 1.26.1 + Gin (HTTP), google/go-github (GitHub API),
