@@ -122,19 +122,33 @@ func TestCircuitBreaker_State_Unknown(t *testing.T) {
 		func(name string, reason error) {},
 		func(name string) {},
 	)
-	// Use reflection to access private cb field (placeholder)
+	// Use reflection to access private cb field
 	val := reflect.ValueOf(cb).Elem()
-	_ = val.FieldByName("cb")
-	// Create a mock that returns an unrecognized state
-	// We'll need to replace the underlying gobreaker.CircuitBreaker with a stub.
-	// Since gobreaker.CircuitBreaker is a struct with private fields, we can't mock easily.
-	// Instead, we can test that the default case returns CircuitClosed by ensuring
-	// the underlying state is one of the known three (already covered).
-	// The default case is unreachable in practice, but we still want coverage.
-	// We'll skip this test and accept that default case is uncovered.
-	// However we can still try to set field to nil and call State, which may panic.
-	// Let's not risk.
-	// Instead, we can adjust coverage threshold for this line.
-	// For now, we'll just keep the test as a placeholder.
-	_ = cb
+	cbField := val.FieldByName("cb")
+	if !cbField.IsValid() {
+		t.Fatal("field 'cb' not found")
+	}
+	// Dereference the pointer to get the underlying gobreaker.CircuitBreaker struct
+	gbVal := cbField.Elem()
+	if !gbVal.IsValid() {
+		t.Fatal("underlying circuit breaker is nil")
+	}
+	// The field name might be "state" (lowercase). Let's try to find it.
+	stateField := gbVal.FieldByName("state")
+	if !stateField.IsValid() {
+		// Try other possible field names
+		stateField = gbVal.FieldByName("currentState")
+		if !stateField.IsValid() {
+			t.Skip("cannot locate state field in gobreaker.CircuitBreaker")
+		}
+	}
+	// Save original state to restore later
+	originalState := stateField.Int()
+	// Set state to an unknown value (99)
+	stateField.SetInt(99)
+	// Call State() - should hit default case and return CircuitClosed
+	result := cb.State()
+	assert.Equal(t, metrics.CircuitClosed, result)
+	// Restore original state
+	stateField.SetInt(originalState)
 }

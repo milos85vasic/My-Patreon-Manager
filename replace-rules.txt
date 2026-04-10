@@ -1,0 +1,14 @@
+# Replace GitHub Personal Access Tokens (40 chars)
+regex:ghp_[A-Za-z0-9]{36,40}==>ghp_***
+# Replace GitLab Personal Access Tokens (20+ chars)
+regex:glpat_[A-Za-z0-9_]{20,}==>glpat_***
+# Replace bearer tokens
+regex:Bearer [A-Za-z0-9]{12,}==>Bearer ***
+# Replace password= values
+regex:password=[^&\s]+==>password=***
+# Replace token= values (but not token=ghp_ already covered)
+regex:token=[^&\s]+==>token=***
+# Replace secret= values
+regex:secret=[^&\s]+==>secret=***
+# Replace generic PAT patterns
+regex:pat_[A-Za-z0-9]{20,}==>pat_***
