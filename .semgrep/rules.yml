@@ -1,0 +1,66 @@
+# .semgrep/rules.yml
+rules:
+  - id: no-context-background-in-handler
+    pattern: context.Background()
+    paths:
+      include:
+        - "internal/handlers/**/*.go"
+        - "internal/services/sync/**/*.go"
+    message: "Use the request/parent context; context.Background() hides cancellation."
+    severity: ERROR
+    languages: [go]
+
+  - id: missing-body-close
+    pattern: |
+      $RESP, $ERR := $C.Do($REQ)
+      ...
+    pattern-not: |
+      $RESP, $ERR := $C.Do($REQ)
+      ...
+      defer $RESP.Body.Close()
+      ...
+    message: "HTTP response body must be closed via defer."
+    severity: ERROR
+    languages: [go]
+
+  - id: mutex-across-io
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $MU.Lock()
+              ...
+              os.WriteFile(...)
+              ...
+              $MU.Unlock()
+          - pattern: |
+              $MU.Lock()
+              ...
+              io.Copy(...)
+              ...
+              $MU.Unlock()
+    message: "Do not hold a mutex across I/O."
+    severity: ERROR
+    languages: [go]
+
+  - id: panic-in-production
+    patterns:
+      - pattern: panic($X)
+    paths:
+      include:
+        - "internal/**/*.go"
+      exclude:
+        - "**/*_test.go"
+    message: "No panics in production code; return an error."
+    severity: ERROR
+    languages: [go]
+
+  - id: time-after-in-loop
+    pattern: |
+      for {
+        ...
+        <-time.After(...)
+        ...
+      }
+    message: "time.After in loops leaks timers; use time.NewTimer with Stop()."
+    severity: WARNING
+    languages: [go]

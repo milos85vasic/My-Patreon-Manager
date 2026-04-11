@@ -1,0 +1,4 @@
+# Semgrep Phase 0 baseline
+# Placeholder. Populated by `semgrep --config .semgrep/rules.yml .` when the
+# scanner becomes available (Phase 8 brings up docker-compose.security.yml
+# with a Semgrep runner). Until then this file is empty by design.
