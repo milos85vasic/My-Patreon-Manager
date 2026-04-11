@@ -19,6 +19,7 @@ type Scheduler struct {
 	opts   SyncOptions
 	alert  Alert
 	logger *slog.Logger
+	parent context.Context
 }
 
 func NewScheduler(runner SyncRunner, opts SyncOptions, alert Alert, logger *slog.Logger) *Scheduler {
@@ -31,16 +32,24 @@ func NewScheduler(runner SyncRunner, opts SyncOptions, alert Alert, logger *slog
 	}
 }
 
-func (s *Scheduler) Start(schedule string) error {
+// Start registers the schedule and begins the cron loop. The provided parent
+// context governs all scheduled job executions: cancelling it will cancel any
+// in-flight job. Passing a nil context is treated as context.Background() for
+// backwards compatibility with callers that have no scoped context yet.
+func (s *Scheduler) Start(ctx context.Context, schedule string) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	s.parent = ctx
 	_, err := s.cron.AddFunc(schedule, func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)
+		jobCtx, cancel := context.WithTimeout(s.parent, 1*time.Hour)
 		defer cancel()
 
 		if s.logger != nil {
 			s.logger.Info("scheduled sync started")
 		}
 
-		result, err := s.runner.Run(ctx, s.opts)
+		result, err := s.runner.Run(jobCtx, s.opts)
 		if err != nil {
 			if s.alert != nil {
 				s.alert.Send("Sync Failed", err.Error())

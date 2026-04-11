@@ -193,7 +193,7 @@ func runSync(ctx context.Context, orch orchestrator, opts syncsvc.SyncOptions, l
 func runScheduled(ctx context.Context, orch orchestrator, opts syncsvc.SyncOptions, schedule string, logger *slog.Logger, testSigCh ...chan os.Signal) {
 	alert := &syncsvc.LogAlert{}
 	scheduler := syncsvc.NewScheduler(orch, opts, alert, logger)
-	if err := scheduler.Start(schedule); err != nil {
+	if err := scheduler.Start(ctx, schedule); err != nil {
 		logger.Error("failed to start scheduler", slog.String("error", err.Error()))
 		osExit(1)
 	}

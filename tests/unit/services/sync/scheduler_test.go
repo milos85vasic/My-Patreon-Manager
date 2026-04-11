@@ -47,7 +47,7 @@ func TestScheduler_InvalidSchedule(t *testing.T) {
 	logger := slog.Default()
 	sched := sync.NewScheduler(mockOrch, opts, alert, logger)
 
-	err := sched.Start("invalid cron expression")
+	err := sched.Start(context.Background(), "invalid cron expression")
 	assert.Error(t, err)
 }
 
@@ -68,7 +68,7 @@ func TestScheduler_ValidScheduleTriggersRun(t *testing.T) {
 	sched := sync.NewScheduler(mockOrch, opts, alert, logger)
 
 	// schedule every second for quick test
-	err := sched.Start("@every 1s")
+	err := sched.Start(context.Background(), "@every 1s")
 	require.NoError(t, err)
 
 	// wait for the cron job to trigger (should happen within 2 seconds)
@@ -109,7 +109,7 @@ func TestScheduler_FailureCallsAlert(t *testing.T) {
 	logger := slog.Default()
 	sched := sync.NewScheduler(mockOrch, opts, alert, logger)
 
-	err := sched.Start("@every 1s")
+	err := sched.Start(context.Background(), "@every 1s")
 	require.NoError(t, err)
 
 	// wait for run and alert
@@ -148,7 +148,7 @@ func TestScheduler_StopWaitsForCompletion(t *testing.T) {
 	logger := slog.Default()
 	sched := sync.NewScheduler(mockOrch, opts, alert, logger)
 
-	err := sched.Start("@every 1s")
+	err := sched.Start(context.Background(), "@every 1s")
 	require.NoError(t, err)
 
 	// Wait for the job to start
@@ -203,7 +203,7 @@ func TestScheduler_NextRunAfterFailure(t *testing.T) {
 	sched := sync.NewScheduler(mockOrch, opts, alert, logger)
 
 	// schedule every second
-	err := sched.Start("@every 1s")
+	err := sched.Start(context.Background(), "@every 1s")
 	require.NoError(t, err)
 
 	// wait for two runs (should happen within 3 seconds)
