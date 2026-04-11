@@ -22,8 +22,8 @@ func TestWebhookFlow_GitHub(t *testing.T) {
 	db := setupWebhookDB(t)
 	defer db.Close()
 
-	// Create a channel to capture queued repositories
-	queue := make(chan models.Repository, 10)
+	// Create a bounded queue to capture queued repositories
+	queue := handlers.NewWebhookQueue[models.Repository](10)
 	dedup := sync.NewEventDeduplicator(5 * time.Minute)
 	mc := &webhookMockMetricsCollector{}
 	h := handlers.NewWebhookHandler(dedup, mc, nil)
@@ -50,16 +50,19 @@ func TestWebhookFlow_GitHub(t *testing.T) {
 	assert.JSONEq(t, `{"status":"queued","event":"push"}`, w.Body.String())
 
 	// Verify repository was queued
-	select {
-	case repo := <-queue:
-		assert.Equal(t, "owner/repo", repo.ID)
-		assert.Equal(t, "github", repo.Service)
-		assert.Equal(t, "owner", repo.Owner)
-		assert.Equal(t, "repo", repo.Name)
-		assert.Equal(t, "https://github.com/owner/repo", repo.HTTPSURL)
-	case <-time.After(1 * time.Second):
-		t.Fatal("expected repository to be queued within 1 second")
-	}
+	drainCtx, drainCancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer drainCancel()
+	var repo models.Repository
+	_ = queue.Drain(drainCtx, func(r models.Repository) error {
+		repo = r
+		drainCancel()
+		return nil
+	})
+	assert.Equal(t, "owner/repo", repo.ID)
+	assert.Equal(t, "github", repo.Service)
+	assert.Equal(t, "owner", repo.Owner)
+	assert.Equal(t, "repo", repo.Name)
+	assert.Equal(t, "https://github.com/owner/repo", repo.HTTPSURL)
 
 	// Verify deduplication tracked the event
 	assert.True(t, dedup.IsDuplicate("test-delivery"))
@@ -70,7 +73,7 @@ func TestWebhookFlow_GitLab(t *testing.T) {
 	db := setupWebhookDB(t)
 	defer db.Close()
 
-	queue := make(chan models.Repository, 10)
+	queue := handlers.NewWebhookQueue[models.Repository](10)
 	dedup := sync.NewEventDeduplicator(5 * time.Minute)
 	mc := &webhookMockMetricsCollector{}
 	h := handlers.NewWebhookHandler(dedup, mc, nil)
@@ -95,16 +98,19 @@ func TestWebhookFlow_GitLab(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.JSONEq(t, `{"status":"queued","event":"Push Hook"}`, w.Body.String())
 
-	select {
-	case repo := <-queue:
-		assert.Equal(t, "group/project", repo.ID)
-		assert.Equal(t, "gitlab", repo.Service)
-		assert.Equal(t, "group", repo.Owner)
-		assert.Equal(t, "project", repo.Name)
-		assert.Equal(t, "https://gitlab.com/group/project", repo.HTTPSURL)
-	case <-time.After(1 * time.Second):
-		t.Fatal("expected repository to be queued within 1 second")
-	}
+	drainCtx, drainCancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer drainCancel()
+	var repo models.Repository
+	_ = queue.Drain(drainCtx, func(r models.Repository) error {
+		repo = r
+		drainCancel()
+		return nil
+	})
+	assert.Equal(t, "group/project", repo.ID)
+	assert.Equal(t, "gitlab", repo.Service)
+	assert.Equal(t, "group", repo.Owner)
+	assert.Equal(t, "project", repo.Name)
+	assert.Equal(t, "https://gitlab.com/group/project", repo.HTTPSURL)
 
 	assert.True(t, dedup.IsDuplicate("token-id"))
 	assert.Equal(t, []string{"gitlab:Push Hook"}, mc.recordedEvents)

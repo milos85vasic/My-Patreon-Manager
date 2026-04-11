@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -14,10 +15,12 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"github.com/milos85vasic/My-Patreon-Manager/internal/concurrency"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/config"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/handlers"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/metrics"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/middleware"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/models"
 	syncsvc "github.com/milos85vasic/My-Patreon-Manager/internal/services/sync"
 )
 
@@ -52,8 +55,22 @@ func main() {
 
 func runServer(ctx context.Context, cfg *config.Config, addr string, logger *slog.Logger) error {
 	metricsCollector := newMetricsCollector()
-	r, dedup := setupRouterFn(cfg, metricsCollector)
+	r, dedup, webhookHandler := setupRouterFn(cfg, metricsCollector)
+
+	// Supervise the webhook drain consumer via Lifecycle so shutdown is
+	// observed and the goroutine cannot outlive the process.
+	lifecycle := concurrency.NewLifecycle()
+	lifecycle.Go(func(ctx context.Context) {
+		drain := webhookDrainFn(logger)
+		if err := webhookHandler.Queue.Drain(ctx, drain); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+			logger.Error("webhook drain stopped", slog.String("error", err.Error()))
+		}
+	})
+
 	defer func() {
+		if err := lifecycle.Stop(5 * time.Second); err != nil {
+			logger.Error("lifecycle stop failed", slog.String("error", err.Error()))
+		}
 		if dedup != nil {
 			if err := dedup.Close(); err != nil {
 				logger.Error("dedup close failed", slog.String("error", err.Error()))
@@ -86,7 +103,22 @@ func runServer(ctx context.Context, cfg *config.Config, addr string, logger *slo
 	return nil
 }
 
-func setupRouter(cfg *config.Config, metricsCollector metrics.MetricsCollector) (*gin.Engine, *syncsvc.EventDeduplicator) {
+// webhookDrainFn returns the per-item handler used by the drain goroutine.
+// Until the orchestrator exposes a real EnqueueRepo path this is a
+// log-and-drop placeholder. Swapping in the real pipeline is a single-line
+// change here; the surrounding Lifecycle plumbing does not need to move.
+var webhookDrainFn = func(logger *slog.Logger) func(models.Repository) error {
+	return func(repo models.Repository) error {
+		if logger != nil {
+			logger.Info("webhook drain",
+				slog.String("repo", repo.ID),
+				slog.String("service", repo.Service))
+		}
+		return nil
+	}
+}
+
+func setupRouter(cfg *config.Config, metricsCollector metrics.MetricsCollector) (*gin.Engine, *syncsvc.EventDeduplicator, *handlers.WebhookHandler) {
 	gin.SetMode(cfg.GinMode)
 	r := gin.New()
 
@@ -104,5 +136,5 @@ func setupRouter(cfg *config.Config, metricsCollector metrics.MetricsCollector) 
 	r.POST("/webhook/gitlab", webhookHandler.GitLabWebhook)
 	r.POST("/webhook/:service", webhookHandler.GenericWebhook)
 
-	return r, dedup
+	return r, dedup, webhookHandler
 }

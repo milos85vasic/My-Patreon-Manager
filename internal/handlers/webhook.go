@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"log/slog"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -20,15 +21,28 @@ func splitFullName(full string) (owner, name string) {
 	return
 }
 
+// DefaultWebhookQueueCapacity is the default bounded capacity used when a
+// caller does not inject its own WebhookQueue.
+const DefaultWebhookQueueCapacity = 1024
+
 type WebhookHandler struct {
 	dedup   *sync.EventDeduplicator
 	metrics metrics.MetricsCollector
 	logger  *slog.Logger
-	Queue   chan models.Repository // optional queue for repository processing
+	// Queue is a required, bounded queue of repositories produced by webhook
+	// events. It is never nil after NewWebhookHandler; callers may replace it
+	// before registering routes but must keep it non-nil. Overflow returns
+	// HTTP 429 rather than silently dropping events.
+	Queue *WebhookQueue[models.Repository]
 }
 
 func NewWebhookHandler(dedup *sync.EventDeduplicator, m metrics.MetricsCollector, logger *slog.Logger) *WebhookHandler {
-	return &WebhookHandler{dedup: dedup, metrics: m, logger: logger}
+	return &WebhookHandler{
+		dedup:   dedup,
+		metrics: m,
+		logger:  logger,
+		Queue:   NewWebhookQueue[models.Repository](DefaultWebhookQueueCapacity),
+	}
 }
 
 func (h *WebhookHandler) GitHubWebhook(c *gin.Context) {
@@ -66,16 +80,15 @@ func (h *WebhookHandler) GitHubWebhook(c *gin.Context) {
 				Name:     name,
 				HTTPSURL: payload.Repository.HTMLURL,
 			}
-			// Send to queue if configured
-			if h.Queue != nil {
-				select {
-				case h.Queue <- repo:
-				default:
-					// Queue full, log warning
-					if h.logger != nil {
-						h.logger.Warn("webhook queue full, dropping repository", slog.String("repo", repo.ID))
-					}
+			if !h.Queue.TryEnqueue(repo) {
+				if h.logger != nil {
+					h.logger.Warn("webhook queue full, rejecting repository", slog.String("repo", repo.ID))
 				}
+				if h.metrics != nil {
+					h.metrics.RecordWebhookEvent("github", eventType)
+				}
+				c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"status": "queue_full", "event": eventType})
+				return
 			}
 		}
 	}
@@ -122,16 +135,15 @@ func (h *WebhookHandler) GitLabWebhook(c *gin.Context) {
 				Name:     name,
 				HTTPSURL: payload.Project.WebURL,
 			}
-			// Send to queue if configured
-			if h.Queue != nil {
-				select {
-				case h.Queue <- repo:
-				default:
-					// Queue full, log warning
-					if h.logger != nil {
-						h.logger.Warn("webhook queue full, dropping repository", slog.String("repo", repo.ID))
-					}
+			if !h.Queue.TryEnqueue(repo) {
+				if h.logger != nil {
+					h.logger.Warn("webhook queue full, rejecting repository", slog.String("repo", repo.ID))
 				}
+				if h.metrics != nil {
+					h.metrics.RecordWebhookEvent("gitlab", eventType)
+				}
+				c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"status": "queue_full", "event": eventType})
+				return
 			}
 		}
 	}

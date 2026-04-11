@@ -12,7 +12,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/config"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/handlers"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/metrics"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/models"
 	syncsvc "github.com/milos85vasic/My-Patreon-Manager/internal/services/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -50,8 +52,9 @@ func TestSetupRouter(t *testing.T) {
 		GinMode: "test",
 		Port:    8080,
 	}
-	router, dedup := setupRouter(cfg, &mockMetricsCollector{})
+	router, dedup, wh := setupRouter(cfg, &mockMetricsCollector{})
 	defer dedup.Close()
+	_ = wh // ensure returned handler is non-nil in tests
 
 	tests := []struct {
 		method string
@@ -165,6 +168,88 @@ func TestRunServer_WithRealRequest(t *testing.T) {
 	}
 }
 
+func TestWebhookDrainFn_LogsRepos(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	fn := webhookDrainFn(logger)
+	err := fn(models.Repository{ID: "owner/repo", Service: "github"})
+	assert.NoError(t, err)
+	assert.Contains(t, buf.String(), "webhook drain")
+	assert.Contains(t, buf.String(), "owner/repo")
+
+	// nil logger branch
+	fnNil := webhookDrainFn(nil)
+	assert.NoError(t, fnNil(models.Repository{ID: "x"}))
+}
+
+func TestRunServer_DrainsQueuedWebhooks(t *testing.T) {
+	originalNewMetricsCollector := newMetricsCollector
+	newMetricsCollector = func() metrics.MetricsCollector { return &mockMetricsCollector{} }
+	defer func() { newMetricsCollector = originalNewMetricsCollector }()
+
+	// Swap setupRouterFn so we can capture the handler's queue and pre-load
+	// it with a repo before runServer starts, which exercises the drain path.
+	originalSetupRouterFn := setupRouterFn
+	defer func() { setupRouterFn = originalSetupRouterFn }()
+
+	var captured *handlers.WebhookHandler
+	setupRouterFn = func(cfg *config.Config, mc metrics.MetricsCollector) (*gin.Engine, *syncsvc.EventDeduplicator, *handlers.WebhookHandler) {
+		r, dedup, wh := setupRouter(cfg, mc)
+		// preload queue so drain loop has work to do
+		require.True(t, wh.Queue.TryEnqueue(models.Repository{ID: "preloaded", Service: "github"}))
+		captured = wh
+		return r, dedup, wh
+	}
+
+	cfg := &config.Config{GinMode: "test", Port: 0}
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo}))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+	defer cancel()
+
+	err := runServer(ctx, cfg, ":0", logger)
+	assert.NoError(t, err)
+	assert.NotNil(t, captured)
+	assert.Contains(t, buf.String(), "preloaded")
+}
+
+func TestRunServer_DrainLogsNonCancelError(t *testing.T) {
+	originalNewMetricsCollector := newMetricsCollector
+	newMetricsCollector = func() metrics.MetricsCollector { return &mockMetricsCollector{} }
+	defer func() { newMetricsCollector = originalNewMetricsCollector }()
+
+	// Override webhookDrainFn so the drain callback returns a sentinel error
+	// rather than exiting on context cancel. This exercises the "drain
+	// stopped" error-logging branch inside runServer.
+	originalDrain := webhookDrainFn
+	webhookDrainFn = func(_ *slog.Logger) func(models.Repository) error {
+		return func(models.Repository) error {
+			return fmt.Errorf("drain sentinel boom")
+		}
+	}
+	defer func() { webhookDrainFn = originalDrain }()
+
+	originalSetupRouterFn := setupRouterFn
+	defer func() { setupRouterFn = originalSetupRouterFn }()
+	setupRouterFn = func(cfg *config.Config, mc metrics.MetricsCollector) (*gin.Engine, *syncsvc.EventDeduplicator, *handlers.WebhookHandler) {
+		r, dedup, wh := setupRouter(cfg, mc)
+		require.True(t, wh.Queue.TryEnqueue(models.Repository{ID: "trigger"}))
+		return r, dedup, wh
+	}
+
+	cfg := &config.Config{GinMode: "test", Port: 0}
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo}))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+	defer cancel()
+
+	err := runServer(ctx, cfg, ":0", logger)
+	assert.NoError(t, err)
+	assert.Contains(t, buf.String(), "webhook drain stopped")
+}
+
 func TestRunServer_ListenError(t *testing.T) {
 	originalNewMetricsCollector := newMetricsCollector
 	newMetricsCollector = func() metrics.MetricsCollector { return &mockMetricsCollector{} }
@@ -252,7 +337,10 @@ func TestMain_Success(t *testing.T) {
 
 	// Mock metrics collector
 	newMetricsCollector = func() metrics.MetricsCollector { return &mockMetricsCollector{} }
-	setupRouterFn = func(*config.Config, metrics.MetricsCollector) (*gin.Engine, *syncsvc.EventDeduplicator) { return gin.New(), syncsvc.NewEventDeduplicator(time.Minute) }
+	setupRouterFn = func(*config.Config, metrics.MetricsCollector) (*gin.Engine, *syncsvc.EventDeduplicator, *handlers.WebhookHandler) {
+		dedup := syncsvc.NewEventDeduplicator(time.Minute)
+		return gin.New(), dedup, handlers.NewWebhookHandler(dedup, &mockMetricsCollector{}, nil)
+	}
 
 	// Mock runServer to return nil (success) and cancel context to exit
 	ctx, cancel := context.WithCancel(context.Background())
@@ -328,7 +416,10 @@ func TestMain_Error(t *testing.T) {
 
 	// Mock metrics collector
 	newMetricsCollector = func() metrics.MetricsCollector { return &mockMetricsCollector{} }
-	setupRouterFn = func(*config.Config, metrics.MetricsCollector) (*gin.Engine, *syncsvc.EventDeduplicator) { return gin.New(), syncsvc.NewEventDeduplicator(time.Minute) }
+	setupRouterFn = func(*config.Config, metrics.MetricsCollector) (*gin.Engine, *syncsvc.EventDeduplicator, *handlers.WebhookHandler) {
+		dedup := syncsvc.NewEventDeduplicator(time.Minute)
+		return gin.New(), dedup, handlers.NewWebhookHandler(dedup, &mockMetricsCollector{}, nil)
+	}
 
 	// Mock runServer to return an error, which should cause osExit(1)
 	ctx, cancel := context.WithCancel(context.Background())
