@@ -129,7 +129,7 @@ func main() {
 	switch args[0] {
 	case "sync":
 		if schedule != "" {
-			runScheduled(ctx, orchestrator, syncOpts, schedule, logger)
+			runScheduledFunc(ctx, orchestrator, syncOpts, schedule, logger)
 		} else {
 			runSync(ctx, orchestrator, syncOpts, logger)
 		}
@@ -190,7 +190,7 @@ func runSync(ctx context.Context, orch orchestrator, opts syncsvc.SyncOptions, l
 	)
 }
 
-func runScheduled(ctx context.Context, orch orchestrator, opts syncsvc.SyncOptions, schedule string, logger *slog.Logger) {
+func runScheduled(ctx context.Context, orch orchestrator, opts syncsvc.SyncOptions, schedule string, logger *slog.Logger, testSigCh ...chan os.Signal) {
 	alert := &syncsvc.LogAlert{}
 	scheduler := syncsvc.NewScheduler(orch, opts, alert, logger)
 	if err := scheduler.Start(schedule); err != nil {
@@ -199,14 +199,21 @@ func runScheduled(ctx context.Context, orch orchestrator, opts syncsvc.SyncOptio
 	}
 	logger.Info("scheduler started", slog.String("schedule", schedule))
 
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	var sigCh chan os.Signal
+	if len(testSigCh) > 0 && testSigCh[0] != nil {
+		sigCh = testSigCh[0]
+	} else {
+		sigCh = make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	}
 
 	<-sigCh
 	logger.Info("shutdown signal received, stopping scheduler")
 	scheduler.Stop()
 	logger.Info("scheduler stopped")
 }
+
+var runScheduledFunc = runScheduled
 
 func parseLogLevel(level string) slog.Level {
 	switch level {

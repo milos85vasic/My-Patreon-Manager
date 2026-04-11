@@ -42,7 +42,7 @@ func TestNormalizeToSSH(t *testing.T) {
 		{"https", "https://github.com/owner/repo", "git@github.com:owner/repo.git"},
 		{"https with .git", "https://github.com/owner/repo.git", "git@github.com:owner/repo.git"},
 		{"scp already with .git", "git@github.com:owner/repo.git", "git@github.com:owner/repo.git"},
-		{"scp already without .git", "git@github.com:owner/repo", "git@github.com:owner/repo"},
+		{"scp already without .git", "git@github.com:owner/repo", "git@github.com:owner/repo.git"},
 		{"malformed scp no slash", "git@github.com:owner", "git@github.com:owner"},
 		{"ssh protocol", "ssh://git@github.com/owner/repo", "git@github.com:owner/repo.git"},
 		{"scp with extra colon", "git@github.com:owner:repo", "git@github.com:owner:repo"},

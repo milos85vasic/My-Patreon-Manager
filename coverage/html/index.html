@@ -55,9 +55,9 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">github.com/milos85vasic/My-Patreon-Manager/cmd/cli/main.go (19.8%)</option>
+				<option value="file0">github.com/milos85vasic/My-Patreon-Manager/cmd/cli/main.go (96.2%)</option>
 				
-				<option value="file1">github.com/milos85vasic/My-Patreon-Manager/cmd/server/main.go (58.3%)</option>
+				<option value="file1">github.com/milos85vasic/My-Patreon-Manager/cmd/server/main.go (54.2%)</option>
 				
 				<option value="file2">github.com/milos85vasic/My-Patreon-Manager/internal/config/config.go (100.0%)</option>
 				
@@ -75,7 +75,7 @@
 				
 				<option value="file9">github.com/milos85vasic/My-Patreon-Manager/internal/errors/errors.go (100.0%)</option>
 				
-				<option value="file10">github.com/milos85vasic/My-Patreon-Manager/internal/handlers/access.go (0.0%)</option>
+				<option value="file10">github.com/milos85vasic/My-Patreon-Manager/internal/handlers/access.go (100.0%)</option>
 				
 				<option value="file11">github.com/milos85vasic/My-Patreon-Manager/internal/handlers/admin.go (0.0%)</option>
 				
@@ -83,9 +83,9 @@
 				
 				<option value="file13">github.com/milos85vasic/My-Patreon-Manager/internal/handlers/metrics.go (0.0%)</option>
 				
-				<option value="file14">github.com/milos85vasic/My-Patreon-Manager/internal/handlers/webhook.go (83.9%)</option>
+				<option value="file14">github.com/milos85vasic/My-Patreon-Manager/internal/handlers/webhook.go (91.4%)</option>
 				
-				<option value="file15">github.com/milos85vasic/My-Patreon-Manager/internal/metrics/circuitbreaker.go (94.4%)</option>
+				<option value="file15">github.com/milos85vasic/My-Patreon-Manager/internal/metrics/circuitbreaker.go (100.0%)</option>
 				
 				<option value="file16">github.com/milos85vasic/My-Patreon-Manager/internal/metrics/prometheus.go (100.0%)</option>
 				
@@ -115,11 +115,11 @@
 				
 				<option value="file29">github.com/milos85vasic/My-Patreon-Manager/internal/providers/git/mirror.go (88.7%)</option>
 				
-				<option value="file30">github.com/milos85vasic/My-Patreon-Manager/internal/providers/git/token_failover.go (6.2%)</option>
+				<option value="file30">github.com/milos85vasic/My-Patreon-Manager/internal/providers/git/token_failover.go (67.7%)</option>
 				
 				<option value="file31">github.com/milos85vasic/My-Patreon-Manager/internal/providers/llm/fallback.go (100.0%)</option>
 				
-				<option value="file32">github.com/milos85vasic/My-Patreon-Manager/internal/providers/llm/verifier.go (85.7%)</option>
+				<option value="file32">github.com/milos85vasic/My-Patreon-Manager/internal/providers/llm/verifier.go (87.0%)</option>
 				
 				<option value="file33">github.com/milos85vasic/My-Patreon-Manager/internal/providers/patreon/client.go (88.2%)</option>
 				
@@ -129,11 +129,11 @@
 				
 				<option value="file36">github.com/milos85vasic/My-Patreon-Manager/internal/providers/renderer/markdown.go (100.0%)</option>
 				
-				<option value="file37">github.com/milos85vasic/My-Patreon-Manager/internal/providers/renderer/pdf.go (100.0%)</option>
+				<option value="file37">github.com/milos85vasic/My-Patreon-Manager/internal/providers/renderer/pdf.go (88.2%)</option>
 				
 				<option value="file38">github.com/milos85vasic/My-Patreon-Manager/internal/providers/renderer/video.go (100.0%)</option>
 				
-				<option value="file39">github.com/milos85vasic/My-Patreon-Manager/internal/providers/renderer/video_pipeline.go (100.0%)</option>
+				<option value="file39">github.com/milos85vasic/My-Patreon-Manager/internal/providers/renderer/video_pipeline.go (28.6%)</option>
 				
 				<option value="file40">github.com/milos85vasic/My-Patreon-Manager/internal/services/access/gating.go (96.7%)</option>
 				
@@ -141,7 +141,7 @@
 				
 				<option value="file42">github.com/milos85vasic/My-Patreon-Manager/internal/services/content/budget.go (87.5%)</option>
 				
-				<option value="file43">github.com/milos85vasic/My-Patreon-Manager/internal/services/content/generator.go (87.3%)</option>
+				<option value="file43">github.com/milos85vasic/My-Patreon-Manager/internal/services/content/generator.go (88.9%)</option>
 				
 				<option value="file44">github.com/milos85vasic/My-Patreon-Manager/internal/services/content/quality.go (100.0%)</option>
 				
@@ -149,7 +149,7 @@
 				
 				<option value="file46">github.com/milos85vasic/My-Patreon-Manager/internal/services/content/tier_mapping.go (90.0%)</option>
 				
-				<option value="file47">github.com/milos85vasic/My-Patreon-Manager/internal/services/filter/repoignore.go (64.2%)</option>
+				<option value="file47">github.com/milos85vasic/My-Patreon-Manager/internal/services/filter/repoignore.go (100.0%)</option>
 				
 				<option value="file48">github.com/milos85vasic/My-Patreon-Manager/internal/services/sync/alert.go (0.0%)</option>
 				
@@ -227,7 +227,22 @@ import (
         syncsvc "github.com/milos85vasic/My-Patreon-Manager/internal/services/sync"
 )
 
-func main() <span class="cov0" title="0">{
+var osExit = os.Exit
+var newConfig = config.NewConfig
+var newDatabase = database.NewDatabase
+var newPromMetrics = metrics.NewPrometheusCollector
+
+type orchestratorFactory func(db database.Database, providers []git.RepositoryProvider, patreonClient patreon.Provider, generator *content.Generator, m metrics.MetricsCollector, logger *slog.Logger, tierMapper *content.TierMapper) orchestrator
+
+var newOrchestrator orchestratorFactory = func(db database.Database, providers []git.RepositoryProvider, patreonClient patreon.Provider, generator *content.Generator, m metrics.MetricsCollector, logger *slog.Logger, tierMapper *content.TierMapper) orchestrator <span class="cov1" title="1">{
+        return syncsvc.NewOrchestrator(db, providers, patreonClient, generator, m, logger, tierMapper)
+}</span>
+
+type orchestrator interface {
+        Run(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error)
+}
+
+func main() <span class="cov8" title="11">{
         var (
                 configFile string
                 dryRun     bool
@@ -250,43 +265,43 @@ func main() <span class="cov0" title="0">{
         flag.Parse()
 
         args := flag.Args()
-        if len(args) == 0 </span><span class="cov0" title="0">{
+        if len(args) == 0 </span><span class="cov1" title="1">{
                 fmt.Println("Usage: patreon-manager &lt;command&gt; [options]")
                 fmt.Println("Commands: sync, scan, generate, validate, publish")
-                os.Exit(1)
+                osExit(1)
         }</span>
 
-        <span class="cov0" title="0">logger := slog.New(slog.NewJSONHandler(os.Stdout, &amp;slog.HandlerOptions{
+        <span class="cov8" title="10">logger := slog.New(slog.NewJSONHandler(os.Stdout, &amp;slog.HandlerOptions{
                 Level: parseLogLevel(logLevel),
         }))
         slog.SetDefault(logger)
 
-        cfg := config.NewConfig()
+        cfg := newConfig()
         cfg.LoadFromEnv()
 
-        if args[0] == "validate" </span><span class="cov0" title="0">{
-                if err := cfg.Validate(); err != nil </span><span class="cov0" title="0">{
+        if args[0] == "validate" </span><span class="cov3" title="2">{
+                if err := cfg.Validate(); err != nil </span><span class="cov1" title="1">{
                         logger.Error("config validation failed", slog.String("error", err.Error()))
-                        os.Exit(1)
+                        osExit(1)
                 }</span>
-                <span class="cov0" title="0">logger.Info("config valid")
+                <span class="cov1" title="1">logger.Info("config valid")
                 return</span>
         }
 
-        <span class="cov0" title="0">db := database.NewDatabase(cfg.DBDriver, cfg.DSN())
+        <span class="cov7" title="8">db := newDatabase(cfg.DBDriver, cfg.DSN())
         ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
         defer cancel()
-        if err := db.Connect(ctx, cfg.DSN()); err != nil </span><span class="cov0" title="0">{
+        if err := db.Connect(ctx, cfg.DSN()); err != nil </span><span class="cov1" title="1">{
                 logger.Error("database connect failed", slog.String("error", err.Error()))
-                os.Exit(1)
+                osExit(1)
         }</span>
-        <span class="cov0" title="0">defer db.Close()
-        if err := db.Migrate(ctx); err != nil </span><span class="cov0" title="0">{
+        <span class="cov7" title="7">defer db.Close()
+        if err := db.Migrate(ctx); err != nil </span><span class="cov1" title="1">{
                 logger.Error("migration failed", slog.String("error", err.Error()))
-                os.Exit(1)
+                osExit(1)
         }</span>
 
-        <span class="cov0" title="0">promMetrics := metrics.NewPrometheusCollector()
+        <span class="cov6" title="6">promMetrics := newPromMetrics()
 
         providers := setupProviders(cfg)
         oauth := patreon.NewOAuth2Manager(cfg.PatreonClientID, cfg.PatreonClientSecret, cfg.PatreonAccessToken, cfg.PatreonRefreshToken)
@@ -306,7 +321,7 @@ func main() <span class="cov0" title="0">{
         reviewQueue := content.NewReviewQueue(store)
         generator.SetReviewQueue(reviewQueue)
 
-        orchestrator := syncsvc.NewOrchestrator(db, providers, patreonClient, generator, promMetrics, logger, nil)
+        orchestrator := newOrchestrator(db, providers, patreonClient, generator, promMetrics, logger, nil)
 
         syncOpts := syncsvc.SyncOptions{
                 DryRun: dryRun,
@@ -318,80 +333,101 @@ func main() <span class="cov0" title="0">{
         }
 
         switch args[0] </span>{
-        case "sync":<span class="cov0" title="0">
-                if schedule != "" </span><span class="cov0" title="0">{
-                        runScheduled(ctx, orchestrator, syncOpts, schedule, logger)
-                }</span> else<span class="cov0" title="0"> {
+        case "sync":<span class="cov3" title="2">
+                if schedule != "" </span><span class="cov1" title="1">{
+                        runScheduledFunc(ctx, orchestrator, syncOpts, schedule, logger)
+                }</span> else<span class="cov1" title="1"> {
                         runSync(ctx, orchestrator, syncOpts, logger)
                 }</span>
-        case "scan":<span class="cov0" title="0">
+        case "scan":<span class="cov1" title="1">
                 runSync(ctx, orchestrator, syncOpts, logger)</span>
-        case "generate":<span class="cov0" title="0">
+        case "generate":<span class="cov1" title="1">
                 runSync(ctx, orchestrator, syncOpts, logger)</span>
-        case "publish":<span class="cov0" title="0">
+        case "publish":<span class="cov1" title="1">
                 runSync(ctx, orchestrator, syncOpts, logger)</span>
-        default:<span class="cov0" title="0">
+        default:<span class="cov1" title="1">
                 fmt.Printf("Unknown command: %s\n", args[0])
-                os.Exit(1)</span>
+                osExit(1)</span>
         }
 }
 
-func setupProviders(cfg *config.Config) []git.RepositoryProvider <span class="cov10" title="6">{
+func setupProviders(cfg *config.Config) []git.RepositoryProvider <span class="cov9" title="12">{
         var providers []git.RepositoryProvider
-        if cfg.GitHubToken != "" </span><span class="cov4" title="2">{
+        if cfg.GitHubToken != "" </span><span class="cov4" title="3">{
                 tm := git.NewTokenManager(cfg.GitHubToken, cfg.GitHubTokenSecondary)
                 providers = append(providers, git.NewGitHubProvider(tm))
         }</span>
-        <span class="cov10" title="6">if cfg.GitLabToken != "" </span><span class="cov4" title="2">{
+        <span class="cov9" title="12">if cfg.GitLabToken != "" </span><span class="cov4" title="3">{
                 tm := git.NewTokenManager(cfg.GitLabToken, cfg.GitLabTokenSecondary)
                 providers = append(providers, git.NewGitLabProvider(tm, cfg.GitLabBaseURL))
         }</span>
-        <span class="cov10" title="6">if cfg.GitFlicToken != "" </span><span class="cov4" title="2">{
+        <span class="cov9" title="12">if cfg.GitFlicToken != "" </span><span class="cov3" title="2">{
                 tm := git.NewTokenManager(cfg.GitFlicToken, cfg.GitFlicTokenSecondary)
                 providers = append(providers, git.NewGitFlicProvider(tm))
         }</span>
-        <span class="cov10" title="6">if cfg.GitVerseToken != "" </span><span class="cov4" title="2">{
+        <span class="cov9" title="12">if cfg.GitVerseToken != "" </span><span class="cov3" title="2">{
                 tm := git.NewTokenManager(cfg.GitVerseToken, cfg.GitVerseTokenSecondary)
                 providers = append(providers, git.NewGitVerseProvider(tm))
         }</span>
-        <span class="cov10" title="6">return providers</span>
+        <span class="cov9" title="12">return providers</span>
 }
 
-func runSync(ctx context.Context, orch *syncsvc.Orchestrator, opts syncsvc.SyncOptions, logger *slog.Logger) <span class="cov0" title="0">{
+func runSync(ctx context.Context, orch orchestrator, opts syncsvc.SyncOptions, logger *slog.Logger) <span class="cov6" title="6">{
         ctx, cancel := context.WithCancel(context.Background())
         defer cancel()
 
         sigCh := make(chan os.Signal, 1)
         signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-        go func() </span><span class="cov0" title="0">{
+        go func() </span><span class="cov6" title="5">{
                 &lt;-sigCh
                 logger.Info("received shutdown signal")
                 cancel()
         }</span>()
 
-        <span class="cov0" title="0">result, err := orch.Run(ctx, opts)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov6" title="6">result, err := orch.Run(ctx, opts)
+        if err != nil </span><span class="cov1" title="1">{
                 logger.Error("sync failed", slog.String("error", err.Error()))
-                os.Exit(1)
+                osExit(1)
         }</span>
-        <span class="cov0" title="0">logger.Info("sync result",
+        <span class="cov6" title="5">logger.Info("sync result",
                 slog.Int("processed", result.Processed),
                 slog.Int("failed", result.Failed),
                 slog.Int("skipped", result.Skipped),
         )</span>
 }
 
-func runScheduled(ctx context.Context, orch *syncsvc.Orchestrator, opts syncsvc.SyncOptions, schedule string, logger *slog.Logger) <span class="cov0" title="0">{
-        logger.Info("scheduled mode not yet implemented", slog.String("schedule", schedule))
-}</span>
+func runScheduled(ctx context.Context, orch orchestrator, opts syncsvc.SyncOptions, schedule string, logger *slog.Logger, testSigCh ...chan os.Signal) <span class="cov1" title="1">{
+        alert := &amp;syncsvc.LogAlert{}
+        scheduler := syncsvc.NewScheduler(orch, opts, alert, logger)
+        if err := scheduler.Start(schedule); err != nil </span><span class="cov0" title="0">{
+                logger.Error("failed to start scheduler", slog.String("error", err.Error()))
+                osExit(1)
+        }</span>
+        <span class="cov1" title="1">logger.Info("scheduler started", slog.String("schedule", schedule))
 
-func parseLogLevel(level string) slog.Level <span class="cov9" title="5">{
+        var sigCh chan os.Signal
+        if len(testSigCh) &gt; 0 &amp;&amp; testSigCh[0] != nil </span><span class="cov1" title="1">{
+                sigCh = testSigCh[0]
+        }</span> else<span class="cov0" title="0"> {
+                sigCh = make(chan os.Signal, 1)
+                signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+        }</span>
+
+        <span class="cov1" title="1">&lt;-sigCh
+        logger.Info("shutdown signal received, stopping scheduler")
+        scheduler.Stop()
+        logger.Info("scheduler stopped")</span>
+}
+
+var runScheduledFunc = runScheduled
+
+func parseLogLevel(level string) slog.Level <span class="cov10" title="15">{
         switch level </span>{
         case "debug":<span class="cov1" title="1">
                 return slog.LevelDebug</span>
         case "error":<span class="cov1" title="1">
                 return slog.LevelError</span>
-        default:<span class="cov6" title="3">
+        default:<span class="cov9" title="13">
                 return slog.LevelInfo</span>
         }
 }
@@ -402,15 +438,18 @@ func parseLogLevel(level string) slog.Level <span class="cov9" title="5">{
 import (
         "fmt"
         "log/slog"
-        "net/http"
         "os"
+        "time"
 
         "github.com/gin-gonic/gin"
+        "github.com/joho/godotenv"
         "github.com/prometheus/client_golang/prometheus/promhttp"
 
         "github.com/milos85vasic/My-Patreon-Manager/internal/config"
         "github.com/milos85vasic/My-Patreon-Manager/internal/handlers"
+        "github.com/milos85vasic/My-Patreon-Manager/internal/metrics"
         "github.com/milos85vasic/My-Patreon-Manager/internal/middleware"
+        syncsvc "github.com/milos85vasic/My-Patreon-Manager/internal/services/sync"
 )
 
 func main() <span class="cov0" title="0">{
@@ -418,6 +457,7 @@ func main() <span class="cov0" title="0">{
         slog.SetDefault(logger)
 
         cfg := config.NewConfig()
+        godotenv.Load()
         cfg.LoadFromEnv()
 
         r := setupRouter(cfg)
@@ -437,21 +477,20 @@ func setupRouter(cfg *config.Config) *gin.Engine <span class="cov8" title="1">{
         r.Use(middleware.Logger())
         r.Use(gin.Recovery())
 
+        // Create metrics collector and deduplicator for webhooks
+        metricsCollector := metrics.NewPrometheusCollector()
+        dedup := syncsvc.NewEventDeduplicator(5 * time.Minute)
+        webhookHandler := handlers.NewWebhookHandler(dedup, metricsCollector, slog.Default())
+
         r.GET("/health", handlers.HealthCheck)
         r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-        r.POST("/webhook/github", func(c *gin.Context) </span><span class="cov8" title="1">{
-                c.JSON(http.StatusOK, gin.H{"status": "received"})
-        }</span>)
-        <span class="cov8" title="1">r.POST("/webhook/gitlab", func(c *gin.Context) </span><span class="cov8" title="1">{
-                c.JSON(http.StatusOK, gin.H{"status": "received"})
-        }</span>)
-        <span class="cov8" title="1">r.POST("/webhook/:service", func(c *gin.Context) </span><span class="cov8" title="1">{
-                service := c.Param("service")
-                c.JSON(http.StatusOK, gin.H{"status": "received", "service": service})
-        }</span>)
-        <span class="cov8" title="1">return r</span>
-}
+        r.POST("/webhook/github", webhookHandler.GitHubWebhook)
+        r.POST("/webhook/gitlab", webhookHandler.GitLabWebhook)
+        r.POST("/webhook/:service", webhookHandler.GenericWebhook)
+
+        return r
+}</span>
 </pre>
 		
 		<pre class="file" id="file2" style="display: none">package config
@@ -496,7 +535,7 @@ type Config struct {
         GracePeriodHours           int
 }
 
-func NewConfig() *Config <span class="cov6" title="19">{
+func NewConfig() *Config <span class="cov6" title="38">{
         return &amp;Config{
                 Port:                       8080,
                 GinMode:                    "debug",
@@ -515,75 +554,75 @@ func NewConfig() *Config <span class="cov6" title="19">{
         }
 }</span>
 
-func (c *Config) Validate() error <span class="cov4" title="7">{
-        if c.PatreonClientID == "" </span><span class="cov2" title="2">{
+func (c *Config) Validate() error <span class="cov4" title="15">{
+        if c.PatreonClientID == "" </span><span class="cov2" title="4">{
                 return fmt.Errorf("PATREON_CLIENT_ID is required")
         }</span>
-        <span class="cov3" title="5">if c.PatreonClientSecret == "" </span><span class="cov1" title="1">{
+        <span class="cov4" title="11">if c.PatreonClientSecret == "" </span><span class="cov1" title="2">{
                 return fmt.Errorf("PATREON_CLIENT_SECRET is required")
         }</span>
-        <span class="cov3" title="4">if c.PatreonAccessToken == "" </span><span class="cov1" title="1">{
+        <span class="cov4" title="9">if c.PatreonAccessToken == "" </span><span class="cov1" title="2">{
                 return fmt.Errorf("PATREON_ACCESS_TOKEN is required")
         }</span>
-        <span class="cov2" title="3">if c.PatreonCampaignID == "" </span><span class="cov1" title="1">{
+        <span class="cov3" title="7">if c.PatreonCampaignID == "" </span><span class="cov1" title="2">{
                 return fmt.Errorf("PATREON_CAMPAIGN_ID is required")
         }</span>
-        <span class="cov2" title="2">if c.HMACSecret == "" </span><span class="cov1" title="1">{
+        <span class="cov3" title="5">if c.HMACSecret == "" </span><span class="cov1" title="2">{
                 return fmt.Errorf("HMAC_SECRET is required for signed URLs")
         }</span>
-        <span class="cov1" title="1">return nil</span>
+        <span class="cov2" title="3">return nil</span>
 }
 
-func (c *Config) DSN() string <span class="cov3" title="4">{
+func (c *Config) DSN() string <span class="cov5" title="23">{
         switch c.DBDriver </span>{
-        case "postgres":<span class="cov2" title="2">
+        case "postgres":<span class="cov2" title="3">
                 return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
                         c.DBHost, c.DBPort, c.DBUser, c.DBPassword, c.DBName)</span>
-        case "sqlite":<span class="cov1" title="1">
+        case "sqlite":<span class="cov5" title="18">
                 return c.DBPath</span>
-        default:<span class="cov1" title="1">
+        default:<span class="cov1" title="2">
                 return c.DBPath</span>
         }
 }
 
-func getEnv(key, defaultVal string) string <span class="cov10" title="200">{
-        if val := os.Getenv(key); val != "" </span><span class="cov5" title="18">{
+func getEnv(key, defaultVal string) string <span class="cov10" title="650">{
+        if val := os.Getenv(key); val != "" </span><span class="cov7" title="123">{
                 return val
         }</span>
-        <span class="cov9" title="182">return defaultVal</span>
+        <span class="cov9" title="527">return defaultVal</span>
 }
 
-func getEnvInt(key string, defaultVal int) int <span class="cov6" title="32">{
-        if val := os.Getenv(key); val != "" </span><span class="cov1" title="1">{
-                if i, err := strconv.Atoi(val); err == nil </span><span class="cov1" title="1">{
+func getEnvInt(key string, defaultVal int) int <span class="cov7" title="104">{
+        if val := os.Getenv(key); val != "" </span><span class="cov4" title="10">{
+                if i, err := strconv.Atoi(val); err == nil </span><span class="cov3" title="5">{
                         return i
                 }</span>
         }
-        <span class="cov6" title="31">return defaultVal</span>
+        <span class="cov7" title="99">return defaultVal</span>
 }
 
-func getEnvFloat(key string, defaultVal float64) float64 <span class="cov4" title="8">{
-        if val := os.Getenv(key); val != "" </span><span class="cov1" title="1">{
-                if f, err := strconv.ParseFloat(val, 64); err == nil </span><span class="cov1" title="1">{
+func getEnvFloat(key string, defaultVal float64) float64 <span class="cov5" title="26">{
+        if val := os.Getenv(key); val != "" </span><span class="cov3" title="6">{
+                if f, err := strconv.ParseFloat(val, 64); err == nil </span><span class="cov1" title="2">{
                         return f
                 }</span>
         }
-        <span class="cov4" title="7">return defaultVal</span>
+        <span class="cov5" title="24">return defaultVal</span>
 }
 
-func getEnvBool(key string, defaultVal bool) bool <span class="cov4" title="8">{
-        if val := os.Getenv(key); val != "" </span><span class="cov4" title="7">{
+func getEnvBool(key string, defaultVal bool) bool <span class="cov5" title="26">{
+        if val := os.Getenv(key); val != "" </span><span class="cov4" title="11">{
                 switch val </span>{
-                case "true", "1", "yes", "on":<span class="cov3" title="5">
+                case "true", "1", "yes", "on":<span class="cov3" title="7">
                         return true</span>
-                default:<span class="cov2" title="2">
+                default:<span class="cov2" title="4">
                         return false</span>
                 }
         }
-        <span class="cov1" title="1">return defaultVal</span>
+        <span class="cov4" title="15">return defaultVal</span>
 }
 
-func (c *Config) LoadFromEnv() <span class="cov4" title="8">{
+func (c *Config) LoadFromEnv() <span class="cov5" title="26">{
         c.Port = getEnvInt("PORT", c.Port)
         c.GinMode = getEnv("GIN_MODE", c.GinMode)
         c.PatreonClientID = getEnv("PATREON_CLIENT_ID", c.PatreonClientID)
@@ -626,13 +665,28 @@ import (
         "github.com/joho/godotenv"
 )
 
-func LoadEnv(files ...string) error <span class="cov10" title="8">{
-        if len(files) == 0 </span><span class="cov4" title="2">{
+func LoadEnv(files ...string) error <span class="cov10" title="11">{
+        if len(files) == 0 </span><span class="cov5" title="3">{
                 return godotenv.Load()
         }</span>
-        <span class="cov8" title="6">for _, f := range files </span><span class="cov10" title="8">{
-                if err := godotenv.Load(f); err != nil </span><span class="cov5" title="3">{
-                        if _, ok := err.(*os.PathError); ok </span><span class="cov4" title="2">{
+        <span class="cov8" title="8">for _, f := range files </span><span class="cov10" title="11">{
+                if err := godotenv.Load(f); err != nil </span><span class="cov6" title="4">{
+                        if _, ok := err.(*os.PathError); ok </span><span class="cov5" title="3">{
+                                continue</span>
+                        }
+                        <span class="cov1" title="1">return err</span>
+                }
+        }
+        <span class="cov8" title="7">return nil</span>
+}
+
+func LoadEnvOverride(files ...string) error <span class="cov8" title="8">{
+        if len(files) == 0 </span><span class="cov3" title="2">{
+                return godotenv.Overload()
+        }</span>
+        <span class="cov7" title="6">for _, f := range files </span><span class="cov8" title="8">{
+                if err := godotenv.Overload(f); err != nil </span><span class="cov5" title="3">{
+                        if _, ok := err.(*os.PathError); ok </span><span class="cov3" title="2">{
                                 continue</span>
                         }
                         <span class="cov1" title="1">return err</span>
@@ -640,28 +694,13 @@ func LoadEnv(files ...string) error <span class="cov10" title="8">{
         }
         <span class="cov7" title="5">return nil</span>
 }
-
-func LoadEnvOverride(files ...string) error <span class="cov7" title="5">{
-        if len(files) == 0 </span><span class="cov1" title="1">{
-                return godotenv.Overload()
-        }</span>
-        <span class="cov7" title="4">for _, f := range files </span><span class="cov7" title="5">{
-                if err := godotenv.Overload(f); err != nil </span><span class="cov4" title="2">{
-                        if _, ok := err.(*os.PathError); ok </span><span class="cov1" title="1">{
-                                continue</span>
-                        }
-                        <span class="cov1" title="1">return err</span>
-                }
-        }
-        <span class="cov5" title="3">return nil</span>
-}
 </pre>
 		
 		<pre class="file" id="file4" style="display: none">package database
 
-func NewDatabase(driver, dsn string) Database <span class="cov10" title="3">{
+func NewDatabase(driver, dsn string) Database <span class="cov10" title="4">{
         switch driver </span>{
-        case "sqlite", "sqlite3":<span class="cov1" title="1">
+        case "sqlite", "sqlite3":<span class="cov5" title="2">
                 return NewSQLiteDB(dsn)</span>
         case "postgres", "pg", "postgresql":<span class="cov1" title="1">
                 return NewPostgresDB(dsn)</span>
@@ -1144,28 +1183,28 @@ type SQLiteDB struct {
         db     *sql.DB
 }
 
-func NewSQLiteDB(dsn string) *SQLiteDB <span class="cov5" title="40">{
+func NewSQLiteDB(dsn string) *SQLiteDB <span class="cov5" title="41">{
         return &amp;SQLiteDB{driver: "sqlite", dsn: dsn}
 }</span>
 
-func (db *SQLiteDB) Connect(ctx context.Context, dsn string) error <span class="cov5" title="38">{
-        if dsn != "" </span><span class="cov2" title="5">{
+func (db *SQLiteDB) Connect(ctx context.Context, dsn string) error <span class="cov5" title="39">{
+        if dsn != "" </span><span class="cov3" title="6">{
                 db.dsn = dsn
         }</span>
-        <span class="cov5" title="38">var err error
+        <span class="cov5" title="39">var err error
         db.db, err = sql.Open("sqlite3", db.dsn)
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("sqlite connect: %w", err)
         }</span>
-        <span class="cov5" title="38">if err = db.db.PingContext(ctx); err != nil </span><span class="cov1" title="1">{
+        <span class="cov5" title="39">if err = db.db.PingContext(ctx); err != nil </span><span class="cov1" title="1">{
                 return fmt.Errorf("sqlite ping: %w", err)
         }</span>
-        <span class="cov5" title="37">db.db.SetMaxOpenConns(1)
+        <span class="cov5" title="38">db.db.SetMaxOpenConns(1)
         return nil</span>
 }
 
-func (db *SQLiteDB) Close() error <span class="cov5" title="37">{
-        if db.db != nil </span><span class="cov5" title="37">{
+func (db *SQLiteDB) Close() error <span class="cov5" title="38">{
+        if db.db != nil </span><span class="cov5" title="38">{
                 return db.db.Close()
         }</span>
         <span class="cov0" title="0">return nil</span>
@@ -1173,7 +1212,7 @@ func (db *SQLiteDB) Close() error <span class="cov5" title="37">{
 
 func (db *SQLiteDB) DB() *sql.DB <span class="cov0" title="0">{ return db.db }</span>
 
-func (db *SQLiteDB) Migrate(ctx context.Context) error <span class="cov4" title="35">{
+func (db *SQLiteDB) Migrate(ctx context.Context) error <span class="cov5" title="36">{
         queries := []string{
                 `CREATE TABLE IF NOT EXISTS schema_migrations (
                         version TEXT PRIMARY KEY,
@@ -1321,12 +1360,12 @@ func (db *SQLiteDB) Migrate(ctx context.Context) error <span class="cov4" title=
                 `CREATE INDEX IF NOT EXISTS idx_audit_type ON audit_entries(event_type)`,
                 `CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_entries(timestamp)`,
         }
-        for _, q := range queries </span><span class="cov8" title="805">{
+        for _, q := range queries </span><span class="cov8" title="828">{
                 if _, err := db.db.ExecContext(ctx, q); err != nil </span><span class="cov0" title="0">{
                         return fmt.Errorf("sqlite migrate: %w", err)
                 }</span>
         }
-        <span class="cov4" title="35">return nil</span>
+        <span class="cov5" title="36">return nil</span>
 }
 
 func (db *SQLiteDB) RunMigrations(ctx context.Context, migrationsFS embed.FS, dir string) error <span class="cov0" title="0">{
@@ -1369,7 +1408,7 @@ func (db *SQLiteDB) MirrorMaps() MirrorMapStore <span class="cov3" title="8">{
         return &amp;SQLiteMirrorMapStore{db: db.db}
 }</span>
 
-func (db *SQLiteDB) GeneratedContents() GeneratedContentStore <span class="cov4" title="27">{
+func (db *SQLiteDB) GeneratedContents() GeneratedContentStore <span class="cov4" title="28">{
         return &amp;SQLiteGeneratedContentStore{db: db.db}
 }</span>
 
@@ -1976,127 +2015,136 @@ type providerError struct {
         rateLimitReset time.Time
 }
 
-func (e *providerError) Error() string             <span class="cov4" title="4">{ return e.msg }</span>
-func (e *providerError) Code() string              <span class="cov10" title="43">{ return e.code }</span>
-func (e *providerError) Retryable() bool           <span class="cov6" title="9">{ return e.retryable }</span>
-func (e *providerError) RateLimitReset() time.Time <span class="cov1" title="1">{ return e.rateLimitReset }</span>
+func (e *providerError) Error() string             <span class="cov7" title="21">{ return e.msg }</span>
+func (e *providerError) Code() string              <span class="cov9" title="58">{ return e.code }</span>
+func (e *providerError) Retryable() bool           <span class="cov7" title="18">{ return e.retryable }</span>
+func (e *providerError) RateLimitReset() time.Time <span class="cov5" title="10">{ return e.rateLimitReset }</span>
 
-func NewProviderError(msg, code string, retryable bool, reset time.Time) ProviderError <span class="cov10" title="43">{
+func NewProviderError(msg, code string, retryable bool, reset time.Time) ProviderError <span class="cov10" title="66">{
         return &amp;providerError{msg: msg, code: code, retryable: retryable, rateLimitReset: reset}
 }</span>
 
-func InvalidCredentials(msg string) ProviderError <span class="cov6" title="12">{
+func InvalidCredentials(msg string) ProviderError <span class="cov7" title="18">{
         return NewProviderError(msg, "invalid_credentials", false, time.Time{})
 }</span>
 
-func NetworkTimeout(msg string) ProviderError <span class="cov5" title="8">{
+func NetworkTimeout(msg string) ProviderError <span class="cov5" title="10">{
         return NewProviderError(msg, "network_timeout", true, time.Time{})
 }</span>
 
-func RateLimited(msg string, reset time.Time) ProviderError <span class="cov6" title="9">{
+func RateLimited(msg string, reset time.Time) ProviderError <span class="cov6" title="14">{
         return NewProviderError(msg, "rate_limited", true, reset)
 }</span>
 
-func PermissionDenied(msg string) ProviderError <span class="cov1" title="1">{
+func PermissionDenied(msg string) ProviderError <span class="cov3" title="4">{
         return NewProviderError(msg, "permission_denied", false, time.Time{})
 }</span>
 
-func NotFound(msg string) ProviderError <span class="cov1" title="1">{
+func NotFound(msg string) ProviderError <span class="cov2" title="2">{
         return NewProviderError(msg, "not_found", false, time.Time{})
 }</span>
 
-func RenderingFailed(msg string) ProviderError <span class="cov1" title="1">{
+func RenderingFailed(msg string) ProviderError <span class="cov2" title="2">{
         return NewProviderError(msg, "rendering_failed", false, time.Time{})
 }</span>
 
-func Timeout(msg string) ProviderError <span class="cov4" title="4">{
+func Timeout(msg string) ProviderError <span class="cov4" title="6">{
         return NewProviderError(msg, "timeout", true, time.Time{})
 }</span>
 
-func LockContention(msg string) ProviderError <span class="cov5" title="6">{
+func LockContention(msg string) ProviderError <span class="cov5" title="8">{
         return NewProviderError(msg, "lock_contention", false, time.Time{})
 }</span>
 
-func IsRateLimited(err error) bool <span class="cov7" title="15">{
-        if pe, ok := err.(ProviderError); ok </span><span class="cov7" title="13">{
+func IsRateLimited(err error) bool <span class="cov7" title="19">{
+        if pe, ok := err.(ProviderError); ok </span><span class="cov6" title="15">{
                 return pe.Code() == "rate_limited"
         }</span>
-        <span class="cov2" title="2">return false</span>
+        <span class="cov3" title="4">return false</span>
 }
 
-func IsLockContention(err error) bool <span class="cov5" title="6">{
-        if pe, ok := err.(ProviderError); ok </span><span class="cov4" title="4">{
+func IsLockContention(err error) bool <span class="cov5" title="10">{
+        if pe, ok := err.(ProviderError); ok </span><span class="cov4" title="6">{
                 return pe.Code() == "lock_contention"
         }</span>
-        <span class="cov2" title="2">return false</span>
+        <span class="cov3" title="4">return false</span>
 }
 
-func IsInvalidCredentials(err error) bool <span class="cov7" title="14">{
-        if pe, ok := err.(ProviderError); ok </span><span class="cov6" title="12">{
+func IsInvalidCredentials(err error) bool <span class="cov7" title="18">{
+        if pe, ok := err.(ProviderError); ok </span><span class="cov6" title="14">{
                 return pe.Code() == "invalid_credentials"
         }</span>
-        <span class="cov2" title="2">return false</span>
+        <span class="cov3" title="4">return false</span>
 }
 </pre>
 		
 		<pre class="file" id="file10" style="display: none">package handlers
 
 import (
+        "context"
         "log/slog"
         "net/http"
         "strconv"
 
         "github.com/gin-gonic/gin"
-        "github.com/milos85vasic/My-Patreon-Manager/internal/services/access"
 )
 
+// interfaces for mocking
+type tierGater interface {
+        VerifyAccess(ctx context.Context, patronID, contentID, requiredTier string, patronTiers []string) (bool, string, error)
+}
+
+type signedURLGenerator interface {
+        VerifySignedURL(token, contentID, subscriberID string, expires int64) bool
+}
+
 type AccessHandler struct {
-        gater  *access.TierGater
-        urlGen *access.SignedURLGenerator
+        gater  tierGater
+        urlGen signedURLGenerator
         logger *slog.Logger
 }
 
-func NewAccessHandler(gater *access.TierGater, urlGen *access.SignedURLGenerator, logger *slog.Logger) *AccessHandler <span class="cov0" title="0">{
+func NewAccessHandler(gater tierGater, urlGen signedURLGenerator, logger *slog.Logger) *AccessHandler <span class="cov10" title="7">{
         return &amp;AccessHandler{gater: gater, urlGen: urlGen, logger: logger}
 }</span>
 
-func (h *AccessHandler) Download(c *gin.Context) <span class="cov0" title="0">{
+func (h *AccessHandler) Download(c *gin.Context) <span class="cov7" title="4">{
         contentID := c.Param("content_id")
         token := c.Query("token")
         sub := c.Query("sub")
         expStr := c.Query("exp")
 
-        if token == "" || sub == "" || expStr == "" </span><span class="cov0" title="0">{
+        if token == "" || sub == "" || expStr == "" </span><span class="cov1" title="1">{
                 c.JSON(http.StatusBadRequest, gin.H{"error": "missing token parameters"})
                 return
         }</span>
 
-        <span class="cov0" title="0">expires, err := strconv.ParseInt(expStr, 10, 64)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov6" title="3">expires, err := strconv.ParseInt(expStr, 10, 64)
+        if err != nil </span><span class="cov1" title="1">{
                 c.JSON(http.StatusBadRequest, gin.H{"error": "invalid expiry"})
                 return
         }</span>
 
-        <span class="cov0" title="0">if !h.urlGen.VerifySignedURL(token, contentID, sub, expires) </span><span class="cov0" title="0">{
+        <span class="cov4" title="2">if !h.urlGen.VerifySignedURL(token, contentID, sub, expires) </span><span class="cov1" title="1">{
                 c.JSON(http.StatusForbidden, gin.H{"error": "invalid or expired token"})
                 return
         }</span>
 
-        <span class="cov0" title="0">c.Header("Content-Disposition", "attachment; filename="+contentID)
+        <span class="cov1" title="1">c.Header("Content-Disposition", "attachment; filename="+contentID)
         c.JSON(http.StatusOK, gin.H{"content_id": contentID, "status": "download_ready"})</span>
 }
 
-func (h *AccessHandler) CheckAccess(c *gin.Context) <span class="cov0" title="0">{
+func (h *AccessHandler) CheckAccess(c *gin.Context) <span class="cov6" title="3">{
         contentID := c.Param("content_id")
         patronID := c.Query("patron_id")
         requiredTier := c.Query("required_tier")
 
-        if patronID == "" || requiredTier == "" </span><span class="cov0" title="0">{
+        if patronID == "" || requiredTier == "" </span><span class="cov1" title="1">{
                 c.JSON(http.StatusBadRequest, gin.H{"error": "missing patron_id or required_tier"})
                 return
         }</span>
 
-        <span class="cov0" title="0">hasAccess, upgradeURL, _ := h.gater.VerifyAccess(c.Request.Context(), patronID, contentID, requiredTier, nil)
+        <span class="cov4" title="2">hasAccess, upgradeURL, _ := h.gater.VerifyAccess(c.Request.Context(), patronID, contentID, requiredTier, nil)
 
         response := gin.H{
                 "access":        hasAccess,
@@ -2104,11 +2152,11 @@ func (h *AccessHandler) CheckAccess(c *gin.Context) <span class="cov0" title="0"
                 "required_tier": requiredTier,
         }
 
-        if !hasAccess </span><span class="cov0" title="0">{
+        if !hasAccess </span><span class="cov1" title="1">{
                 response["upgrade_url"] = upgradeURL
         }</span>
 
-        <span class="cov0" title="0">c.JSON(http.StatusOK, response)</span>
+        <span class="cov4" title="2">c.JSON(http.StatusOK, response)</span>
 }
 </pre>
 		
@@ -2149,7 +2197,7 @@ import (
         "github.com/gin-gonic/gin"
 )
 
-func HealthCheck(c *gin.Context) <span class="cov8" title="1">{
+func HealthCheck(c *gin.Context) <span class="cov10" title="2">{
         c.JSON(http.StatusOK, gin.H{
                 "status": "healthy",
         })
@@ -2200,24 +2248,28 @@ type WebhookHandler struct {
         Queue   chan models.Repository // optional queue for repository processing
 }
 
-func NewWebhookHandler(dedup *sync.EventDeduplicator, m metrics.MetricsCollector, logger *slog.Logger) *WebhookHandler <span class="cov10" title="7">{
+func NewWebhookHandler(dedup *sync.EventDeduplicator, m metrics.MetricsCollector, logger *slog.Logger) *WebhookHandler <span class="cov10" title="8">{
         return &amp;WebhookHandler{dedup: dedup, metrics: m, logger: logger}
 }</span>
 
-func (h *WebhookHandler) GitHubWebhook(c *gin.Context) <span class="cov7" title="4">{
+func (h *WebhookHandler) GitHubWebhook(c *gin.Context) <span class="cov7" title="5">{
         eventID := c.GetHeader("X-GitHub-Delivery")
         eventType := c.GetHeader("X-GitHub-Event")
 
-        if h.dedup != nil </span><span class="cov7" title="4">{
+        if h.logger != nil </span><span class="cov1" title="1">{
+                h.logger.Debug("GitHubWebhook invoked")
+        }</span>
+
+        <span class="cov7" title="5">if h.dedup != nil </span><span class="cov7" title="5">{
                 if h.dedup.IsDuplicate(eventID) </span><span class="cov1" title="1">{
                         c.JSON(200, gin.H{"status": "duplicate_ignored"})
                         return
                 }</span>
-                <span class="cov6" title="3">h.dedup.TrackEvent(eventID)</span>
+                <span class="cov7" title="4">h.dedup.TrackEvent(eventID)</span>
         }
 
         // Parse repository from webhook payload
-        <span class="cov6" title="3">var payload struct {
+        <span class="cov7" title="4">var payload struct {
                 Repository struct {
                         FullName string `json:"full_name"`
                         HTMLURL  string `json:"html_url"`
@@ -2249,23 +2301,23 @@ func (h *WebhookHandler) GitHubWebhook(c *gin.Context) <span class="cov7" title=
                 }
         }
 
-        <span class="cov6" title="3">if h.metrics != nil </span><span class="cov6" title="3">{
+        <span class="cov7" title="4">if h.metrics != nil </span><span class="cov7" title="4">{
                 h.metrics.RecordWebhookEvent("github", eventType)
         }</span>
 
-        <span class="cov6" title="3">if h.logger != nil </span><span class="cov0" title="0">{
+        <span class="cov7" title="4">if h.logger != nil </span><span class="cov1" title="1">{
                 h.logger.Info("github webhook received", slog.String("event", eventType), slog.String("delivery", eventID))
         }</span>
 
-        <span class="cov6" title="3">c.JSON(200, gin.H{"status": "queued", "event": eventType})</span>
+        <span class="cov7" title="4">c.JSON(200, gin.H{"status": "queued", "event": eventType})</span>
 }
 
-func (h *WebhookHandler) GitLabWebhook(c *gin.Context) <span class="cov4" title="2">{
+func (h *WebhookHandler) GitLabWebhook(c *gin.Context) <span class="cov5" title="3">{
         eventType := c.GetHeader("X-Gitlab-Event")
         eventID := c.GetHeader("X-Gitlab-Token")
 
-        if h.dedup != nil </span><span class="cov4" title="2">{
-                if h.dedup.IsDuplicate(eventID) </span><span class="cov0" title="0">{
+        if h.dedup != nil </span><span class="cov5" title="3">{
+                if h.dedup.IsDuplicate(eventID) </span><span class="cov1" title="1">{
                         c.JSON(200, gin.H{"status": "duplicate_ignored"})
                         return
                 }</span>
@@ -2316,18 +2368,18 @@ func (h *WebhookHandler) GitLabWebhook(c *gin.Context) <span class="cov4" title=
         <span class="cov4" title="2">c.JSON(200, gin.H{"status": "queued", "event": eventType})</span>
 }
 
-func (h *WebhookHandler) GenericWebhook(c *gin.Context) <span class="cov1" title="1">{
+func (h *WebhookHandler) GenericWebhook(c *gin.Context) <span class="cov4" title="2">{
         service := c.Param("service")
 
-        if h.metrics != nil </span><span class="cov1" title="1">{
+        if h.metrics != nil </span><span class="cov4" title="2">{
                 h.metrics.RecordWebhookEvent(service, "push")
         }</span>
 
-        <span class="cov1" title="1">if h.logger != nil </span><span class="cov0" title="0">{
+        <span class="cov4" title="2">if h.logger != nil </span><span class="cov1" title="1">{
                 h.logger.Info("webhook received", slog.String("service", service))
         }</span>
 
-        <span class="cov1" title="1">c.JSON(200, gin.H{"status": "queued", "service": service})</span>
+        <span class="cov4" title="2">c.JSON(200, gin.H{"status": "queued", "service": service})</span>
 }
 </pre>
 		
@@ -2359,55 +2411,55 @@ const (
         CircuitHalfOpen
 )
 
-func NewCircuitBreaker(name string, threshold uint32, timeout, halfOpenTimeout time.Duration, onTrip func(string, error), onReset func(string)) *CircuitBreaker <span class="cov9" title="84">{
+func NewCircuitBreaker(name string, threshold uint32, timeout, halfOpenTimeout time.Duration, onTrip func(string, error), onReset func(string)) *CircuitBreaker <span class="cov10" title="145">{
         cb := gobreaker.NewCircuitBreaker(gobreaker.Settings{
                 Name:        name,
                 MaxRequests: 1,
                 Interval:    0,
                 Timeout:     timeout,
-                ReadyToTrip: func(counts gobreaker.Counts) bool </span><span class="cov7" title="25">{
+                ReadyToTrip: func(counts gobreaker.Counts) bool </span><span class="cov7" title="36">{
                         return uint32(counts.ConsecutiveFailures) &gt;= threshold
                 }</span>,
-                OnStateChange: func(name string, from gobreaker.State, to gobreaker.State) <span class="cov5" title="11">{
-                        if to == gobreaker.StateOpen </span><span class="cov5" title="8">{
+                OnStateChange: func(name string, from gobreaker.State, to gobreaker.State) <span class="cov6" title="17">{
+                        if to == gobreaker.StateOpen </span><span class="cov5" title="11">{
                                 onTrip(name, nil)
-                        }</span> else<span class="cov3" title="3"> if to == gobreaker.StateClosed </span><span class="cov1" title="1">{
+                        }</span> else<span class="cov4" title="6"> if to == gobreaker.StateClosed </span><span class="cov2" title="2">{
                                 onReset(name)
                         }</span>
                 },
         })
-        <span class="cov9" title="84">return &amp;CircuitBreaker{cb: cb, name: name, onTrip: onTrip}</span>
+        <span class="cov10" title="145">return &amp;CircuitBreaker{cb: cb, name: name, onTrip: onTrip}</span>
 }
 
-func (c *CircuitBreaker) Execute(fn func() (interface{}, error)) (interface{}, error) <span class="cov9" title="69">{
+func (c *CircuitBreaker) Execute(fn func() (interface{}, error)) (interface{}, error) <span class="cov9" title="104">{
         return c.cb.Execute(fn)
 }</span>
 
-func (c *CircuitBreaker) State() CircuitState <span class="cov10" title="89">{
+func (c *CircuitBreaker) State() CircuitState <span class="cov9" title="126">{
         switch c.cb.State() </span>{
-        case gobreaker.StateClosed:<span class="cov9" title="79">
+        case gobreaker.StateClosed:<span class="cov9" title="108">
                 return CircuitClosed</span>
-        case gobreaker.StateOpen:<span class="cov5" title="8">
+        case gobreaker.StateOpen:<span class="cov5" title="13">
                 return CircuitOpen</span>
-        case gobreaker.StateHalfOpen:<span class="cov2" title="2">
+        case gobreaker.StateHalfOpen:<span class="cov3" title="4">
                 return CircuitHalfOpen</span>
         }
-        <span class="cov0" title="0">return CircuitClosed</span>
+        <span class="cov1" title="1">return CircuitClosed</span>
 }
 
-func (c *CircuitBreaker) HalfOpen() bool <span class="cov3" title="3">{
+func (c *CircuitBreaker) HalfOpen() bool <span class="cov4" title="6">{
         return c.cb.State() == gobreaker.StateHalfOpen
 }</span>
 
-func DefaultOnTrip(name string, reason error) <span class="cov4" title="7">{
-        if reason != nil </span><span class="cov1" title="1">{
+func DefaultOnTrip(name string, reason error) <span class="cov5" title="10">{
+        if reason != nil </span><span class="cov2" title="2">{
                 log.Printf("[WARN] Circuit breaker tripped: %s: %v", name, reason)
-        }</span> else<span class="cov4" title="6"> {
+        }</span> else<span class="cov4" title="8"> {
                 log.Printf("[WARN] Circuit breaker tripped: %s", name)
         }</span>
 }
 
-func DefaultOnReset(name string) <span class="cov1" title="1">{
+func DefaultOnReset(name string) <span class="cov2" title="2">{
         log.Printf("[INFO] Circuit breaker reset: %s", name)
 }</span>
 </pre>
@@ -2438,7 +2490,7 @@ type PrometheusCollector struct {
         webhookEvents     *prometheus.CounterVec
 }
 
-func NewPrometheusCollector() *PrometheusCollector <span class="cov1" title="1">{
+func NewPrometheusCollector() *PrometheusCollector <span class="cov10" title="9">{
         c := &amp;PrometheusCollector{}
 
         c.syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
@@ -2506,51 +2558,51 @@ func NewPrometheusCollector() *PrometheusCollector <span class="cov1" title="1">
         return c
 }</span>
 
-func (c *PrometheusCollector) RecordSyncDuration(service string, status string, seconds float64) <span class="cov1" title="1">{
+func (c *PrometheusCollector) RecordSyncDuration(service string, status string, seconds float64) <span class="cov3" title="2">{
         c.syncDuration.WithLabelValues(service, status).Observe(seconds)
 }</span>
 
-func (c *PrometheusCollector) RecordReposProcessed(service, action string) <span class="cov1" title="1">{
+func (c *PrometheusCollector) RecordReposProcessed(service, action string) <span class="cov3" title="2">{
         c.reposProcessed.WithLabelValues(service, action).Inc()
 }</span>
 
-func (c *PrometheusCollector) RecordAPIError(service, errorType string) <span class="cov1" title="1">{
+func (c *PrometheusCollector) RecordAPIError(service, errorType string) <span class="cov3" title="2">{
         c.apiErrors.WithLabelValues(service, errorType).Inc()
 }</span>
 
-func (c *PrometheusCollector) RecordLLMLatency(model string, seconds float64) <span class="cov1" title="1">{
+func (c *PrometheusCollector) RecordLLMLatency(model string, seconds float64) <span class="cov3" title="2">{
         c.llmLatency.WithLabelValues(model).Observe(seconds)
 }</span>
 
-func (c *PrometheusCollector) RecordLLMTokens(model, tokenType string, count int) <span class="cov10" title="2">{
+func (c *PrometheusCollector) RecordLLMTokens(model, tokenType string, count int) <span class="cov6" title="4">{
         c.llmTokens.WithLabelValues(model, tokenType).Add(float64(count))
 }</span>
 
-func (c *PrometheusCollector) RecordLLMQualityScore(repository string, score float64) <span class="cov1" title="1">{
+func (c *PrometheusCollector) RecordLLMQualityScore(repository string, score float64) <span class="cov3" title="2">{
         c.llmQualityScore.WithLabelValues(repository).Set(score)
 }</span>
 
-func (c *PrometheusCollector) RecordContentGenerated(format, qualityTier string) <span class="cov1" title="1">{
+func (c *PrometheusCollector) RecordContentGenerated(format, qualityTier string) <span class="cov3" title="2">{
         c.contentGenerated.WithLabelValues(format, qualityTier).Inc()
 }</span>
 
-func (c *PrometheusCollector) RecordPostCreated(tier string) <span class="cov1" title="1">{
+func (c *PrometheusCollector) RecordPostCreated(tier string) <span class="cov3" title="2">{
         c.postsCreated.WithLabelValues(tier).Inc()
 }</span>
 
-func (c *PrometheusCollector) RecordPostUpdated(tier string) <span class="cov1" title="1">{
+func (c *PrometheusCollector) RecordPostUpdated(tier string) <span class="cov3" title="2">{
         c.postsUpdated.WithLabelValues(tier).Inc()
 }</span>
 
-func (c *PrometheusCollector) RecordWebhookEvent(service, eventType string) <span class="cov1" title="1">{
+func (c *PrometheusCollector) RecordWebhookEvent(service, eventType string) <span class="cov6" title="4">{
         c.webhookEvents.WithLabelValues(service, eventType).Inc()
 }</span>
 
-func (c *PrometheusCollector) SetActiveSyncs(count int) <span class="cov1" title="1">{
+func (c *PrometheusCollector) SetActiveSyncs(count int) <span class="cov3" title="2">{
         c.activeSyncs.Set(float64(count))
 }</span>
 
-func (c *PrometheusCollector) SetBudgetUtilization(percent float64) <span class="cov1" title="1">{
+func (c *PrometheusCollector) SetBudgetUtilization(percent float64) <span class="cov3" title="2">{
         c.budgetUtilization.Set(percent)
 }</span>
 </pre>
@@ -2862,7 +2914,7 @@ type UsageStats struct {
         BudgetUsedPct float64 `json:"budget_used_pct"`
 }
 
-func (t *ContentTemplate) VariablesJSON() string <span class="cov10" title="3">{
+func (t *ContentTemplate) VariablesJSON() string <span class="cov10" title="6">{
         b, _ := json.Marshal(t.Variables)
         return string(b)
 }</span>
@@ -2912,7 +2964,7 @@ type Tier struct {
         UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
-func (p *Post) TierIDsJSON() string <span class="cov10" title="3">{
+func (p *Post) TierIDsJSON() string <span class="cov10" title="6">{
         b, _ := json.Marshal(p.TierIDs)
         return string(b)
 }</span>
@@ -2980,12 +3032,12 @@ type SyncLock struct {
         ExpiresAt time.Time `json:"expires_at" db:"expires_at"`
 }
 
-func (r *Repository) TopicsJSON() string <span class="cov10" title="3">{
+func (r *Repository) TopicsJSON() string <span class="cov10" title="6">{
         b, _ := json.Marshal(r.Topics)
         return string(b)
 }</span>
 
-func (r *Repository) LanguageStatsJSON() string <span class="cov10" title="3">{
+func (r *Repository) LanguageStatsJSON() string <span class="cov10" title="6">{
         b, _ := json.Marshal(r.LanguageStats)
         return string(b)
 }</span>
@@ -3218,7 +3270,7 @@ type GitHubProvider struct {
         org    string
 }
 
-func NewGitHubProvider(tokenManager *TokenManager) *GitHubProvider <span class="cov10" title="7">{
+func NewGitHubProvider(tokenManager *TokenManager) *GitHubProvider <span class="cov10" title="8">{
         client := github.NewClient(nil)
         return &amp;GitHubProvider{client: client, tm: tokenManager}
 }</span>
@@ -3357,15 +3409,15 @@ func (p *GitHubProvider) toRepository(r *github.Repository) models.Repository <s
 }
 
 // SetBaseURL sets the base URL for the GitHub client (for testing).
-func (p *GitHubProvider) SetBaseURL(baseURL string) error <span class="cov8" title="5">{
+func (p *GitHubProvider) SetBaseURL(baseURL string) error <span class="cov7" title="5">{
         parsed, err := url.Parse(baseURL)
         if err != nil </span><span class="cov0" title="0">{
                 return err
         }</span>
-        <span class="cov8" title="5">if p.client != nil </span><span class="cov8" title="5">{
+        <span class="cov7" title="5">if p.client != nil </span><span class="cov7" title="5">{
                 p.client.BaseURL = parsed
         }</span>
-        <span class="cov8" title="5">return nil</span>
+        <span class="cov7" title="5">return nil</span>
 }
 </pre>
 		
@@ -3388,21 +3440,21 @@ type GitLabProvider struct {
         baseURL string
 }
 
-func NewGitLabProvider(tokenManager *TokenManager, baseURL string) *GitLabProvider <span class="cov10" title="7">{
+func NewGitLabProvider(tokenManager *TokenManager, baseURL string) *GitLabProvider <span class="cov10" title="8">{
         p := &amp;GitLabProvider{tm: tokenManager, baseURL: baseURL}
         // Create client with empty token (will be replaced in Authenticate)
         // If baseURL is provided, use it
         var err error
         if baseURL != "" &amp;&amp; baseURL != "https://gitlab.com" </span><span class="cov0" title="0">{
                 p.client, err = gitlab.NewClient("", gitlab.WithBaseURL(baseURL))
-        }</span> else<span class="cov10" title="7"> {
+        }</span> else<span class="cov10" title="8"> {
                 p.client, err = gitlab.NewClient("")
         }</span>
-        <span class="cov10" title="7">if err != nil </span><span class="cov0" title="0">{
+        <span class="cov10" title="8">if err != nil </span><span class="cov0" title="0">{
                 // Should not happen with valid URL; fallback to nil client
                 p.client = nil
         }</span>
-        <span class="cov10" title="7">return p</span>
+        <span class="cov10" title="8">return p</span>
 }
 
 func (p *GitLabProvider) Name() string <span class="cov0" title="0">{ return "gitlab" }</span>
@@ -3954,7 +4006,7 @@ type TokenManager struct {
         cb             *metrics.CircuitBreaker
 }
 
-func NewTokenManager(primary, secondary string) *TokenManager <span class="cov10" title="30">{
+func NewTokenManager(primary, secondary string) *TokenManager <span class="cov10" title="44">{
         return &amp;TokenManager{
                 PrimaryToken:   primary,
                 SecondaryToken: secondary,
@@ -3964,36 +4016,36 @@ func NewTokenManager(primary, secondary string) *TokenManager <span class="cov10
         }
 }</span>
 
-func (tm *TokenManager) GetCurrentToken() string <span class="cov9" title="23">{
+func (tm *TokenManager) GetCurrentToken() string <span class="cov8" title="27">{
         tm.mu.RLock()
         defer tm.mu.RUnlock()
         return tm.CurrentToken
 }</span>
 
-func (tm *TokenManager) Failover() error <span class="cov0" title="0">{
+func (tm *TokenManager) Failover() error <span class="cov5" title="6">{
         tm.mu.Lock()
         defer tm.mu.Unlock()
 
-        if tm.SecondaryToken == "" </span><span class="cov0" title="0">{
+        if tm.SecondaryToken == "" </span><span class="cov1" title="1">{
                 return errors.RateLimited("no secondary token available", time.Now().Add(1*time.Hour))
         }</span>
 
-        <span class="cov0" title="0">if tm.CurrentToken == tm.PrimaryToken </span><span class="cov0" title="0">{
+        <span class="cov4" title="5">if tm.CurrentToken == tm.PrimaryToken </span><span class="cov4" title="4">{
                 tm.CurrentToken = tm.SecondaryToken
-                if tm.OnFailover != nil </span><span class="cov0" title="0">{
+                if tm.OnFailover != nil </span><span class="cov4" title="4">{
                         tm.OnFailover(tm.PrimaryToken, tm.SecondaryToken)
                 }</span>
-                <span class="cov0" title="0">return nil</span>
+                <span class="cov4" title="4">return nil</span>
         }
 
-        <span class="cov0" title="0">tm.CurrentToken = tm.PrimaryToken
-        if tm.OnFailover != nil </span><span class="cov0" title="0">{
+        <span class="cov1" title="1">tm.CurrentToken = tm.PrimaryToken
+        if tm.OnFailover != nil </span><span class="cov1" title="1">{
                 tm.OnFailover(tm.SecondaryToken, tm.PrimaryToken)
         }</span>
-        <span class="cov0" title="0">return nil</span>
+        <span class="cov1" title="1">return nil</span>
 }
 
-func (tm *TokenManager) IsFailedOver() bool <span class="cov0" title="0">{
+func (tm *TokenManager) IsFailedOver() bool <span class="cov2" title="2">{
         tm.mu.RLock()
         defer tm.mu.RUnlock()
         return tm.CurrentToken != tm.PrimaryToken
@@ -4005,7 +4057,7 @@ type RateLimitAwareClient struct {
         baseURL      string
 }
 
-func NewRateLimitAwareClient(tokenManager *TokenManager, baseURL string) *RateLimitAwareClient <span class="cov0" title="0">{
+func NewRateLimitAwareClient(tokenManager *TokenManager, baseURL string) *RateLimitAwareClient <span class="cov5" title="6">{
         return &amp;RateLimitAwareClient{
                 client:       &amp;http.Client{Timeout: 30 * time.Second},
                 tokenManager: tokenManager,
@@ -4013,28 +4065,28 @@ func NewRateLimitAwareClient(tokenManager *TokenManager, baseURL string) *RateLi
         }
 }</span>
 
-func (c *RateLimitAwareClient) Do(req *http.Request) (*http.Response, error) <span class="cov0" title="0">{
+func (c *RateLimitAwareClient) Do(req *http.Request) (*http.Response, error) <span class="cov2" title="2">{
         token := c.tokenManager.GetCurrentToken()
-        if token == "" </span><span class="cov0" title="0">{
+        if token == "" </span><span class="cov1" title="1">{
                 return nil, errors.InvalidCredentials("no token available")
         }</span>
-        <span class="cov0" title="0">return c.client.Do(req)</span>
+        <span class="cov1" title="1">return c.client.Do(req)</span>
 }
 
-func (c *RateLimitAwareClient) HandleRateLimit(resp *http.Response) error <span class="cov0" title="0">{
-        if resp.StatusCode == http.StatusTooManyRequests </span><span class="cov0" title="0">{
+func (c *RateLimitAwareClient) HandleRateLimit(resp *http.Response) error <span class="cov4" title="4">{
+        if resp.StatusCode == http.StatusTooManyRequests </span><span class="cov1" title="1">{
                 retryAfter := resp.Header.Get("Retry-After")
-                if retryAfter == "" </span><span class="cov0" title="0">{
+                if retryAfter == "" </span><span class="cov1" title="1">{
                         retryAfter = "3600"
                 }</span>
-                <span class="cov0" title="0">c.tokenManager.Failover()
+                <span class="cov1" title="1">c.tokenManager.Failover()
                 return errors.RateLimited("rate limited", time.Now().Add(1*time.Hour))</span>
         }
-        <span class="cov0" title="0">if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized </span><span class="cov0" title="0">{
+        <span class="cov3" title="3">if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized </span><span class="cov2" title="2">{
                 c.tokenManager.Failover()
                 return errors.PermissionDenied("token rejected")
         }</span>
-        <span class="cov0" title="0">return nil</span>
+        <span class="cov1" title="1">return nil</span>
 }
 
 type OAuth2TokenManager struct {
@@ -4048,7 +4100,7 @@ type OAuth2TokenManager struct {
         client        *http.Client
 }
 
-func NewOAuth2TokenManager(clientID, clientSecret, accessToken, refreshToken string) *OAuth2TokenManager <span class="cov0" title="0">{
+func NewOAuth2TokenManager(clientID, clientSecret, accessToken, refreshToken string) *OAuth2TokenManager <span class="cov5" title="6">{
         return &amp;OAuth2TokenManager{
                 AccessToken:  accessToken,
                 RefreshToken: refreshToken,
@@ -4059,14 +4111,14 @@ func NewOAuth2TokenManager(clientID, clientSecret, accessToken, refreshToken str
         }
 }</span>
 
-func (m *OAuth2TokenManager) GetAccessToken() string <span class="cov0" title="0">{
+func (m *OAuth2TokenManager) GetAccessToken() string <span class="cov6" title="11">{
         m.mu.RLock()
         defer m.mu.RUnlock()
         return m.AccessToken
 }</span>
 
-func (m *OAuth2TokenManager) Refresh(ctx context.Context) error <span class="cov0" title="0">{
-        if m.RefreshToken == "" </span><span class="cov0" title="0">{
+func (m *OAuth2TokenManager) Refresh(ctx context.Context) error <span class="cov1" title="1">{
+        if m.RefreshToken == "" </span><span class="cov1" title="1">{
                 return errors.InvalidCredentials("no refresh token available")
         }</span>
 
@@ -4101,7 +4153,7 @@ func (m *OAuth2TokenManager) Refresh(ctx context.Context) error <span class="cov
         return nil</span>
 }
 
-func (m *OAuth2TokenManager) IsExpired() bool <span class="cov0" title="0">{
+func (m *OAuth2TokenManager) IsExpired() bool <span class="cov7" title="13">{
         m.mu.RLock()
         defer m.mu.RUnlock()
         return time.Now().After(m.ExpiresAt)
@@ -4126,16 +4178,16 @@ type FallbackChain struct {
         metrics   metrics.MetricsCollector
 }
 
-func NewFallbackChain(providers []LLMProvider, threshold float64, m metrics.MetricsCollector) *FallbackChain <span class="cov8" title="23">{
+func NewFallbackChain(providers []LLMProvider, threshold float64, m metrics.MetricsCollector) *FallbackChain <span class="cov8" title="42">{
         breakers := make([]*metrics.CircuitBreaker, len(providers))
-        for i := range providers </span><span class="cov9" title="42">{
+        for i := range providers </span><span class="cov9" title="71">{
                 breakers[i] = metrics.NewCircuitBreaker(
                         fmt.Sprintf("llm_fallback_%d", i),
                         3, 60*time.Second, 30*time.Second,
                         metrics.DefaultOnTrip, metrics.DefaultOnReset,
                 )
         }</span>
-        <span class="cov8" title="23">return &amp;FallbackChain{
+        <span class="cov8" title="42">return &amp;FallbackChain{
                 providers: providers,
                 breakers:  breakers,
                 threshold: threshold,
@@ -4143,80 +4195,80 @@ func NewFallbackChain(providers []LLMProvider, threshold float64, m metrics.Metr
         }</span>
 }
 
-func (fc *FallbackChain) GenerateContent(ctx context.Context, prompt models.Prompt, opts models.GenerationOptions) (models.Content, error) <span class="cov8" title="27">{
+func (fc *FallbackChain) GenerateContent(ctx context.Context, prompt models.Prompt, opts models.GenerationOptions) (models.Content, error) <span class="cov8" title="39">{
         var lastErr error
         var bestContent models.Content
         bestScore := -1.0
 
-        for i, provider := range fc.providers </span><span class="cov10" title="52">{
-                if fc.breakers[i].State() == metrics.CircuitOpen </span><span class="cov3" title="3">{
+        for i, provider := range fc.providers </span><span class="cov10" title="74">{
+                if fc.breakers[i].State() == metrics.CircuitOpen </span><span class="cov4" title="6">{
                         continue</span>
                 }
 
-                <span class="cov9" title="49">result, err := fc.breakers[i].Execute(func() (interface{}, error) </span><span class="cov9" title="49">{
+                <span class="cov9" title="68">result, err := fc.breakers[i].Execute(func() (interface{}, error) </span><span class="cov9" title="68">{
                         return provider.GenerateContent(ctx, prompt, opts)
                 }</span>)
-                <span class="cov9" title="49">if err != nil </span><span class="cov7" title="17">{
+                <span class="cov9" title="68">if err != nil </span><span class="cov7" title="23">{
                         lastErr = err
                         continue</span>
                 }
 
-                <span class="cov8" title="32">content := result.(models.Content)
-                if content.QualityScore &gt;= fc.threshold </span><span class="cov8" title="23">{
+                <span class="cov8" title="45">content := result.(models.Content)
+                if content.QualityScore &gt;= fc.threshold </span><span class="cov8" title="32">{
                         return content, nil
                 }</span>
 
-                <span class="cov6" title="9">if fc.metrics != nil </span><span class="cov4" title="5">{
+                <span class="cov6" title="13">if fc.metrics != nil </span><span class="cov4" title="6">{
                         fc.metrics.RecordLLMQualityScore("", content.QualityScore)
                 }</span>
                 // store the best content so far (highest score)
-                <span class="cov6" title="9">if content.QualityScore &gt; bestScore </span><span class="cov5" title="8">{
+                <span class="cov6" title="13">if content.QualityScore &gt; bestScore </span><span class="cov6" title="12">{
                         bestScore = content.QualityScore
                         bestContent = content
                 }</span>
-                <span class="cov6" title="9">lastErr = fmt.Errorf("quality score %.2f below threshold %.2f for model %s",
+                <span class="cov6" title="13">lastErr = fmt.Errorf("quality score %.2f below threshold %.2f for model %s",
                         content.QualityScore, fc.threshold, content.ModelUsed)</span>
         }
 
         // If we have at least one content (even below threshold), return it
-        <span class="cov4" title="4">if bestScore &gt;= 0 </span><span class="cov3" title="3">{
+        <span class="cov5" title="7">if bestScore &gt;= 0 </span><span class="cov4" title="5">{
                 return bestContent, nil
         }</span>
 
-        <span class="cov1" title="1">return models.Content{}, fmt.Errorf("all providers failed: %w", lastErr)</span>
+        <span class="cov2" title="2">return models.Content{}, fmt.Errorf("all providers failed: %w", lastErr)</span>
 }
 
-func (fc *FallbackChain) GetAvailableModels(ctx context.Context) ([]models.ModelInfo, error) <span class="cov5" title="7">{
-        for i, provider := range fc.providers </span><span class="cov7" title="14">{
+func (fc *FallbackChain) GetAvailableModels(ctx context.Context) ([]models.ModelInfo, error) <span class="cov5" title="9">{
+        for i, provider := range fc.providers </span><span class="cov6" title="17">{
                 if fc.breakers[i].State() == metrics.CircuitOpen </span><span class="cov1" title="1">{
                         continue</span>
                 }
-                <span class="cov6" title="13">models, err := provider.GetAvailableModels(ctx)
-                if err == nil </span><span class="cov5" title="6">{
+                <span class="cov6" title="16">models, err := provider.GetAvailableModels(ctx)
+                if err == nil </span><span class="cov5" title="8">{
                         return models, nil
                 }</span>
         }
         <span class="cov1" title="1">return nil, fmt.Errorf("all providers failed to list models")</span>
 }
 
-func (fc *FallbackChain) GetModelQualityScore(ctx context.Context, modelID string) (float64, error) <span class="cov5" title="7">{
-        for i, provider := range fc.providers </span><span class="cov7" title="14">{
+func (fc *FallbackChain) GetModelQualityScore(ctx context.Context, modelID string) (float64, error) <span class="cov5" title="9">{
+        for i, provider := range fc.providers </span><span class="cov6" title="17">{
                 if fc.breakers[i].State() == metrics.CircuitOpen </span><span class="cov1" title="1">{
                         continue</span>
                 }
-                <span class="cov6" title="13">score, err := provider.GetModelQualityScore(ctx, modelID)
-                if err == nil </span><span class="cov5" title="6">{
+                <span class="cov6" title="16">score, err := provider.GetModelQualityScore(ctx, modelID)
+                if err == nil </span><span class="cov5" title="8">{
                         return score, nil
                 }</span>
         }
         <span class="cov1" title="1">return 0, fmt.Errorf("all providers failed to get quality score")</span>
 }
 
-func (fc *FallbackChain) GetTokenUsage(ctx context.Context) (models.UsageStats, error) <span class="cov3" title="3">{
-        if len(fc.providers) == 0 </span><span class="cov1" title="1">{
+func (fc *FallbackChain) GetTokenUsage(ctx context.Context) (models.UsageStats, error) <span class="cov4" title="5">{
+        if len(fc.providers) == 0 </span><span class="cov2" title="2">{
                 return models.UsageStats{}, fmt.Errorf("no providers available")
         }</span>
-        <span class="cov2" title="2">return fc.providers[0].GetTokenUsage(ctx)</span>
+        <span class="cov3" title="3">return fc.providers[0].GetTokenUsage(ctx)</span>
 }
 </pre>
 		
@@ -4244,7 +4296,7 @@ type VerifierClient struct {
         metrics metrics.MetricsCollector
 }
 
-func NewVerifierClient(baseURL, apiKey string, m metrics.MetricsCollector) *VerifierClient <span class="cov10" title="9">{
+func NewVerifierClient(baseURL, apiKey string, m metrics.MetricsCollector) *VerifierClient <span class="cov10" title="24">{
         return &amp;VerifierClient{
                 baseURL: baseURL,
                 apiKey:  apiKey,
@@ -4255,26 +4307,26 @@ func NewVerifierClient(baseURL, apiKey string, m metrics.MetricsCollector) *Veri
         }
 }</span>
 
-func (v *VerifierClient) GenerateContent(ctx context.Context, prompt models.Prompt, opts models.GenerationOptions) (models.Content, error) <span class="cov8" title="7">{
-        result, err := v.cb.Execute(func() (interface{}, error) </span><span class="cov8" title="6">{
+func (v *VerifierClient) GenerateContent(ctx context.Context, prompt models.Prompt, opts models.GenerationOptions) (models.Content, error) <span class="cov7" title="10">{
+        result, err := v.cb.Execute(func() (interface{}, error) </span><span class="cov7" title="9">{
                 start := time.Now()
-                defer func() </span><span class="cov8" title="6">{
-                        if v.metrics != nil </span><span class="cov8" title="6">{
+                defer func() </span><span class="cov7" title="9">{
+                        if v.metrics != nil </span><span class="cov6" title="7">{
                                 v.metrics.RecordLLMLatency(opts.ModelID, time.Since(start).Seconds())
                         }</span>
                 }()
 
-                <span class="cov8" title="6">body := map[string]interface{}{
+                <span class="cov7" title="9">body := map[string]interface{}{
                         "prompt":       prompt,
                         "model_id":     opts.ModelID,
                         "max_tokens":   opts.MaxTokens,
                         "quality_tier": opts.QualityTier,
                 }
                 resp, err := v.doRequest(ctx, "POST", v.baseURL+"/v1/completions", body)
-                if err != nil </span><span class="cov6" title="4">{
+                if err != nil </span><span class="cov6" title="6">{
                         return nil, err
                 }</span>
-                <span class="cov3" title="2">defer resp.Body.Close()
+                <span class="cov4" title="3">defer resp.Body.Close()
 
                 var result struct {
                         Content      string  `json:"content"`
@@ -4287,11 +4339,11 @@ func (v *VerifierClient) GenerateContent(ctx context.Context, prompt models.Prom
                         return nil, fmt.Errorf("decode completion response: %w", err)
                 }</span>
 
-                <span class="cov1" title="1">if v.metrics != nil </span><span class="cov1" title="1">{
+                <span class="cov2" title="2">if v.metrics != nil </span><span class="cov2" title="2">{
                         v.metrics.RecordLLMTokens(result.ModelUsed, "output", result.TokenCount)
                 }</span>
 
-                <span class="cov1" title="1">return models.Content{
+                <span class="cov2" title="2">return models.Content{
                         Title:        result.Title,
                         Body:         result.Content,
                         QualityScore: result.QualityScore,
@@ -4300,19 +4352,19 @@ func (v *VerifierClient) GenerateContent(ctx context.Context, prompt models.Prom
                 }, nil</span>
         })
 
-        <span class="cov8" title="7">if err != nil </span><span class="cov8" title="6">{
+        <span class="cov7" title="10">if err != nil </span><span class="cov6" title="8">{
                 return models.Content{}, err
         }</span>
-        <span class="cov1" title="1">return result.(models.Content), nil</span>
+        <span class="cov2" title="2">return result.(models.Content), nil</span>
 }
 
-func (v *VerifierClient) GetAvailableModels(ctx context.Context) ([]models.ModelInfo, error) <span class="cov1" title="1">{
-        result, err := v.cb.Execute(func() (interface{}, error) </span><span class="cov1" title="1">{
+func (v *VerifierClient) GetAvailableModels(ctx context.Context) ([]models.ModelInfo, error) <span class="cov2" title="2">{
+        result, err := v.cb.Execute(func() (interface{}, error) </span><span class="cov2" title="2">{
                 resp, err := v.doRequest(ctx, "GET", v.baseURL+"/v1/models", nil)
                 if err != nil </span><span class="cov0" title="0">{
                         return nil, err
                 }</span>
-                <span class="cov1" title="1">defer resp.Body.Close()
+                <span class="cov2" title="2">defer resp.Body.Close()
 
                 var models struct {
                         Data []models.ModelInfo `json:"data"`
@@ -4320,22 +4372,22 @@ func (v *VerifierClient) GetAvailableModels(ctx context.Context) ([]models.Model
                 if err := json.NewDecoder(resp.Body).Decode(&amp;models); err != nil </span><span class="cov0" title="0">{
                         return nil, fmt.Errorf("decode models response: %w", err)
                 }</span>
-                <span class="cov1" title="1">return models.Data, nil</span>
+                <span class="cov2" title="2">return models.Data, nil</span>
         })
 
-        <span class="cov1" title="1">if err != nil </span><span class="cov0" title="0">{
+        <span class="cov2" title="2">if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
-        <span class="cov1" title="1">return result.([]models.ModelInfo), nil</span>
+        <span class="cov2" title="2">return result.([]models.ModelInfo), nil</span>
 }
 
-func (v *VerifierClient) GetModelQualityScore(ctx context.Context, modelID string) (float64, error) <span class="cov1" title="1">{
-        result, err := v.cb.Execute(func() (interface{}, error) </span><span class="cov1" title="1">{
+func (v *VerifierClient) GetModelQualityScore(ctx context.Context, modelID string) (float64, error) <span class="cov2" title="2">{
+        result, err := v.cb.Execute(func() (interface{}, error) </span><span class="cov2" title="2">{
                 resp, err := v.doRequest(ctx, "GET", v.baseURL+"/v1/models/"+modelID+"/score", nil)
                 if err != nil </span><span class="cov0" title="0">{
                         return nil, err
                 }</span>
-                <span class="cov1" title="1">defer resp.Body.Close()
+                <span class="cov2" title="2">defer resp.Body.Close()
 
                 var score struct {
                         QualityScore float64 `json:"quality_score"`
@@ -4343,72 +4395,72 @@ func (v *VerifierClient) GetModelQualityScore(ctx context.Context, modelID strin
                 if err := json.NewDecoder(resp.Body).Decode(&amp;score); err != nil </span><span class="cov0" title="0">{
                         return nil, fmt.Errorf("decode quality score: %w", err)
                 }</span>
-                <span class="cov1" title="1">return score.QualityScore, nil</span>
+                <span class="cov2" title="2">return score.QualityScore, nil</span>
         })
 
-        <span class="cov1" title="1">if err != nil </span><span class="cov0" title="0">{
+        <span class="cov2" title="2">if err != nil </span><span class="cov0" title="0">{
                 return 0, err
         }</span>
-        <span class="cov1" title="1">return result.(float64), nil</span>
+        <span class="cov2" title="2">return result.(float64), nil</span>
 }
 
-func (v *VerifierClient) GetTokenUsage(ctx context.Context) (models.UsageStats, error) <span class="cov1" title="1">{
+func (v *VerifierClient) GetTokenUsage(ctx context.Context) (models.UsageStats, error) <span class="cov2" title="2">{
         resp, err := v.doRequest(ctx, "GET", v.baseURL+"/v1/usage", nil)
         if err != nil </span><span class="cov0" title="0">{
                 return models.UsageStats{}, err
         }</span>
-        <span class="cov1" title="1">defer resp.Body.Close()
+        <span class="cov2" title="2">defer resp.Body.Close()
 
         var stats models.UsageStats
         if err := json.NewDecoder(resp.Body).Decode(&amp;stats); err != nil </span><span class="cov0" title="0">{
                 return models.UsageStats{}, fmt.Errorf("decode usage stats: %w", err)
         }</span>
-        <span class="cov1" title="1">return stats, nil</span>
+        <span class="cov2" title="2">return stats, nil</span>
 }
 
-func (v *VerifierClient) doRequest(ctx context.Context, method, url string, body interface{}) (*http.Response, error) <span class="cov10" title="9">{
+func (v *VerifierClient) doRequest(ctx context.Context, method, url string, body interface{}) (*http.Response, error) <span class="cov8" title="15">{
         var reqBody io.Reader
-        if body != nil </span><span class="cov8" title="6">{
+        if body != nil </span><span class="cov7" title="9">{
                 data, err := json.Marshal(body)
                 if err != nil </span><span class="cov0" title="0">{
                         return nil, fmt.Errorf("marshal request: %w", err)
                 }</span>
-                <span class="cov8" title="6">reqBody = bytes.NewReader(data)</span>
+                <span class="cov7" title="9">reqBody = bytes.NewReader(data)</span>
         }
 
-        <span class="cov10" title="9">req, err := http.NewRequestWithContext(ctx, method, url, reqBody)
+        <span class="cov8" title="15">req, err := http.NewRequestWithContext(ctx, method, url, reqBody)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, fmt.Errorf("create request: %w", err)
         }</span>
-        <span class="cov10" title="9">if v.apiKey != "" </span><span class="cov10" title="9">{
+        <span class="cov8" title="15">if v.apiKey != "" </span><span class="cov8" title="15">{
                 req.Header.Set("Authorization", "Bearer "+v.apiKey)
         }</span>
-        <span class="cov10" title="9">req.Header.Set("Content-Type", "application/json")
+        <span class="cov8" title="15">req.Header.Set("Content-Type", "application/json")
 
         resp, err := v.client.Do(req)
         if err != nil </span><span class="cov1" title="1">{
                 return nil, errors.Timeout(fmt.Sprintf("llm request failed: %v", err))
         }</span>
-        <span class="cov9" title="8">if resp.StatusCode &gt;= 500 </span><span class="cov3" title="2">{
+        <span class="cov8" title="14">if resp.StatusCode &gt;= 500 </span><span class="cov4" title="3">{
                 resp.Body.Close()
                 return nil, errors.Timeout(fmt.Sprintf("llm server error: %d", resp.StatusCode))
         }</span>
-        <span class="cov8" title="6">if resp.StatusCode == 429 </span><span class="cov1" title="1">{
+        <span class="cov7" title="11">if resp.StatusCode == 429 </span><span class="cov2" title="2">{
                 resp.Body.Close()
                 return nil, errors.RateLimited("llm rate limited", time.Now().Add(1*time.Minute))
         }</span>
-        <span class="cov7" title="5">return resp, nil</span>
+        <span class="cov7" title="9">return resp, nil</span>
 }
 
-func (v *VerifierClient) SetBaseURL(url string) <span class="cov0" title="0">{
+func (v *VerifierClient) SetBaseURL(url string) <span class="cov1" title="1">{
         v.baseURL = url
 }</span>
 
-func (v *VerifierClient) SetTransport(rt http.RoundTripper) <span class="cov1" title="1">{
+func (v *VerifierClient) SetTransport(rt http.RoundTripper) <span class="cov2" title="2">{
         v.client.Transport = rt
 }</span>
 
-func (v *VerifierClient) SetCircuitBreaker(cb *metrics.CircuitBreaker) <span class="cov1" title="1">{
+func (v *VerifierClient) SetCircuitBreaker(cb *metrics.CircuitBreaker) <span class="cov2" title="2">{
         v.cb = cb
 }</span>
 </pre>
@@ -4446,7 +4498,7 @@ type Provider interface {
         DeletePost(ctx context.Context, postID string) error
 }
 
-func NewClient(oauth *OAuth2Manager, campaignID string) *Client <span class="cov9" title="23">{
+func NewClient(oauth *OAuth2Manager, campaignID string) *Client <span class="cov10" title="29">{
         return &amp;Client{
                 oauth:           oauth,
                 campaignID:      campaignID,
@@ -4478,7 +4530,7 @@ func (c *Client) buildURL(path string) string <span class="cov9" title="20">{
 
 func (c *Client) doRequest(ctx context.Context, method, url string, body interface{}) (*http.Response, error) <span class="cov9" title="24">{
         // Helper to create a new request with current token
-        newRequest := func() (*http.Request, error) </span><span class="cov10" title="26">{
+        newRequest := func() (*http.Request, error) </span><span class="cov9" title="26">{
                 var reqBody io.Reader
                 if body != nil </span><span class="cov5" title="6">{
                         data, err := json.Marshal(body)
@@ -4487,11 +4539,11 @@ func (c *Client) doRequest(ctx context.Context, method, url string, body interfa
                         }</span>
                         <span class="cov5" title="6">reqBody = bytes.NewReader(data)</span>
                 }
-                <span class="cov10" title="26">req, err := http.NewRequestWithContext(ctx, method, url, reqBody)
+                <span class="cov9" title="26">req, err := http.NewRequestWithContext(ctx, method, url, reqBody)
                 if err != nil </span><span class="cov0" title="0">{
                         return nil, fmt.Errorf("create request: %w", err)
                 }</span>
-                <span class="cov10" title="26">req.Header.Set("Authorization", "Bearer "+c.oauth.GetAccessToken())
+                <span class="cov9" title="26">req.Header.Set("Authorization", "Bearer "+c.oauth.GetAccessToken())
                 req.Header.Set("Content-Type", "application/json")
                 req.Header.Set("Accept", "application/json")
                 return req, nil</span>
@@ -4736,7 +4788,7 @@ type OAuth2Manager struct {
         tokenEndpoint string
 }
 
-func NewOAuth2Manager(clientID, clientSecret, accessToken, refreshToken string) *OAuth2Manager <span class="cov10" title="37">{
+func NewOAuth2Manager(clientID, clientSecret, accessToken, refreshToken string) *OAuth2Manager <span class="cov10" title="43">{
         return &amp;OAuth2Manager{
                 clientID:      clientID,
                 clientSecret:  clientSecret,
@@ -4772,7 +4824,7 @@ func (m *OAuth2Manager) Refresh(ctx context.Context) error <span class="cov7" ti
         if err != nil </span><span class="cov2" title="2">{
                 return errors.NetworkTimeout(fmt.Sprintf("token refresh failed: %v", err))
         }</span>
-        <span class="cov6" title="8">defer resp.Body.Close()
+        <span class="cov5" title="8">defer resp.Body.Close()
 
         if resp.StatusCode != http.StatusOK </span><span class="cov2" title="2">{
                 return errors.InvalidCredentials(fmt.Sprintf("token refresh returned %d", resp.StatusCode))
@@ -4814,7 +4866,7 @@ func (m *OAuth2Manager) SetTokenUpdateCallback(cb func(accessToken, refreshToken
 }</span>
 
 // SetTokenEndpoint sets the OAuth2 token endpoint URL for testing.
-func (m *OAuth2Manager) SetTokenEndpoint(url string) <span class="cov9" title="26">{
+func (m *OAuth2Manager) SetTokenEndpoint(url string) <span class="cov8" title="26">{
         m.tokenEndpoint = url
 }</span>
 
@@ -4838,7 +4890,7 @@ import (
 
 type HTMLRenderer struct{}
 
-func NewHTMLRenderer() *HTMLRenderer <span class="cov8" title="13">{ return &amp;HTMLRenderer{} }</span>
+func NewHTMLRenderer() *HTMLRenderer <span class="cov9" title="19">{ return &amp;HTMLRenderer{} }</span>
 
 func (r *HTMLRenderer) Format() string <span class="cov1" title="1">{ return "html" }</span>
 
@@ -4934,7 +4986,7 @@ import (
 
 type MarkdownRenderer struct{}
 
-func NewMarkdownRenderer() *MarkdownRenderer <span class="cov10" title="16">{ return &amp;MarkdownRenderer{} }</span>
+func NewMarkdownRenderer() *MarkdownRenderer <span class="cov10" title="22">{ return &amp;MarkdownRenderer{} }</span>
 
 func (r *MarkdownRenderer) Format() string <span class="cov3" title="2">{ return "markdown" }</span>
 
@@ -4942,7 +4994,7 @@ func (r *MarkdownRenderer) SupportedContentTypes() []string <span class="cov3" t
         return []string{"text/markdown", "text/x-markdown"}
 }</span>
 
-func (r *MarkdownRenderer) Render(ctx context.Context, content models.Content, opts RenderOptions) ([]byte, error) <span class="cov9" title="12">{
+func (r *MarkdownRenderer) Render(ctx context.Context, content models.Content, opts RenderOptions) ([]byte, error) <span class="cov8" title="12">{
         var sb strings.Builder
 
         sb.WriteString("---\n")
@@ -4954,7 +5006,7 @@ func (r *MarkdownRenderer) Render(ctx context.Context, content models.Content, o
                 }</span>
                 <span class="cov3" title="2">sb.WriteString(fmt.Sprintf("tiers: %q\n", strings.Join(tiers, ",")))</span>
         }
-        <span class="cov9" title="12">sb.WriteString("generated: true\n")
+        <span class="cov8" title="12">sb.WriteString("generated: true\n")
         sb.WriteString("---\n\n")
 
         body := content.Body
@@ -4969,16 +5021,16 @@ func (r *MarkdownRenderer) Render(ctx context.Context, content models.Content, o
                 }</span>
         }
 
-        <span class="cov9" title="12">result := sb.String()
+        <span class="cov8" title="12">result := sb.String()
         result = lintMarkdown(result)
         return []byte(result), nil</span>
 }
 
-func applyTemplateVariables(body string, content models.Content) string <span class="cov9" title="12">{
+func applyTemplateVariables(body string, content models.Content) string <span class="cov8" title="12">{
         return body
 }</span>
 
-func lintMarkdown(content string) string <span class="cov9" title="12">{
+func lintMarkdown(content string) string <span class="cov8" title="12">{
         brokenLink := regexp.MustCompile(`\[([^\]]*)\]\(\s*\)`)
         content = brokenLink.ReplaceAllString(content, "[$1]")
         return content
@@ -4990,7 +5042,10 @@ func lintMarkdown(content string) string <span class="cov9" title="12">{
 import (
         "context"
         "fmt"
+        "os"
         "os/exec"
+        "path/filepath"
+        "time"
 
         "github.com/milos85vasic/My-Patreon-Manager/internal/models"
 )
@@ -5014,13 +5069,67 @@ func (r *PDFRenderer) Render(ctx context.Context, content models.Content, opts R
                 return nil, fmt.Errorf("render html for pdf: %w", err)
         }</span>
 
-        <span class="cov7" title="4">if _, err := exec.LookPath("chromium-browser"); err != nil </span><span class="cov4" title="2">{
-                if _, err := exec.LookPath("google-chrome"); err != nil </span><span class="cov1" title="1">{
-                        return htmlContent, nil
-                }</span>
-        }
+        // Try to find a browser executable
+        <span class="cov7" title="4">var browser string
+        if path, err := exec.LookPath("chromium-browser"); err == nil </span><span class="cov1" title="1">{
+                browser = path
+        }</span> else<span class="cov6" title="3"> if path, err := exec.LookPath("google-chrome"); err == nil </span><span class="cov1" title="1">{
+                browser = path
+        }</span> else<span class="cov4" title="2"> {
+                // No browser found, return HTML as fallback
+                return htmlContent, nil
+        }</span>
 
-        <span class="cov6" title="3">return htmlContent, nil</span>
+        // Create temporary directory for PDF generation
+        <span class="cov4" title="2">tmpDir, err := os.MkdirTemp("", "patreon-pdf-*")
+        if err != nil </span><span class="cov0" title="0">{
+                return htmlContent, nil // fallback on temp dir error
+        }</span>
+        <span class="cov4" title="2">defer os.RemoveAll(tmpDir)
+
+        htmlPath := filepath.Join(tmpDir, "content.html")
+        pdfPath := filepath.Join(tmpDir, "output.pdf")
+
+        // Write HTML to file
+        if err := os.WriteFile(htmlPath, htmlContent, 0644); err != nil </span><span class="cov0" title="0">{
+                return htmlContent, nil // fallback
+        }</span>
+
+        // Run browser in headless mode to generate PDF
+        // Use --no-sandbox for container environments, --disable-gpu for headless
+        <span class="cov4" title="2">cmd := exec.CommandContext(ctx, browser,
+                "--headless",
+                "--disable-gpu",
+                "--no-sandbox",
+                "--print-to-pdf="+pdfPath,
+                htmlPath,
+        )
+
+        // Set timeout for PDF generation
+        timeoutCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+        defer cancel()
+        cmd = exec.CommandContext(timeoutCtx, browser,
+                "--headless",
+                "--disable-gpu",
+                "--no-sandbox",
+                "--print-to-pdf="+pdfPath,
+                htmlPath,
+        )
+
+        cmd.Stdout = nil
+        cmd.Stderr = nil
+        if err := cmd.Run(); err != nil </span><span class="cov0" title="0">{
+                // PDF generation failed, return HTML fallback
+                return htmlContent, nil
+        }</span>
+
+        // Read generated PDF
+        <span class="cov4" title="2">pdfData, err := os.ReadFile(pdfPath)
+        if err != nil </span><span class="cov4" title="2">{
+                return htmlContent, nil // fallback
+        }</span>
+
+        <span class="cov0" title="0">return pdfData, nil</span>
 }
 </pre>
 		
@@ -5054,6 +5163,10 @@ func (r *VideoScriptRenderer) Render(ctx context.Context, content models.Content
 import (
         "context"
         "fmt"
+        "os"
+        "os/exec"
+        "path/filepath"
+        "syscall"
 
         "github.com/milos85vasic/My-Patreon-Manager/internal/models"
 )
@@ -5072,12 +5185,102 @@ func (p *VideoPipeline) Render(ctx context.Context, content models.Content, opts
         if !p.enabled </span><span class="cov1" title="1">{
                 return nil, fmt.Errorf("video generation is not enabled")
         }</span>
-        <span class="cov1" title="1">return nil, fmt.Errorf("video pipeline not yet implemented")</span>
+
+        // Check if ffmpeg is available
+        <span class="cov1" title="1">if _, err := exec.LookPath("ffmpeg"); err != nil </span><span class="cov1" title="1">{
+                return nil, fmt.Errorf("ffmpeg not found: video generation requires ffmpeg installed")
+        }</span>
+
+        // Create temporary directory for video generation
+        <span class="cov0" title="0">tmpDir, err := os.MkdirTemp("", "patreon-video-*")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("create temp dir: %w", err)
+        }</span>
+        <span class="cov0" title="0">defer os.RemoveAll(tmpDir)
+
+        outputPath := filepath.Join(tmpDir, "output.mp4")
+
+        // Generate a simple video with ffmpeg: blue background with title text
+        duration := 5 // seconds
+        cmd := exec.CommandContext(ctx, "ffmpeg",
+                "-f", "lavfi",
+                "-i", fmt.Sprintf("color=c=blue:s=1280x720:d=%d", duration),
+                "-vf", fmt.Sprintf("drawtext=text='%s':fontcolor=white:fontsize=24:x=(w-text_w)/2:y=(h-text_h)/2", escapeFFmpegText(content.Title)),
+                "-c:v", "libx264",
+                "-t", fmt.Sprintf("%d", duration),
+                "-y", // overwrite output
+                outputPath,
+        )
+
+        // Run ffmpeg with timeout
+        cmd.Stdout = nil
+        cmd.Stderr = nil
+        if err := cmd.Start(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("start ffmpeg: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">done := make(chan error, 1)
+        go func() </span><span class="cov0" title="0">{
+                done &lt;- cmd.Wait()
+        }</span>()
+
+        <span class="cov0" title="0">select </span>{
+        case &lt;-ctx.Done():<span class="cov0" title="0">
+                _ = cmd.Process.Kill()
+                &lt;-done
+                return nil, ctx.Err()</span>
+        case err := &lt;-done:<span class="cov0" title="0">
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("ffmpeg failed: %w", err)
+                }</span>
+        }
+
+        // Read generated video
+        <span class="cov0" title="0">videoData, err := os.ReadFile(outputPath)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("read video file: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return videoData, nil</span>
 }
 
 func (p *VideoPipeline) CheckDiskSpace(requiredMB int) error <span class="cov1" title="1">{
-        return nil
-}</span>
+        var stat syscall.Statfs_t
+        wd, err := os.Getwd()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("get working dir: %w", err)
+        }</span>
+        <span class="cov1" title="1">if err := syscall.Statfs(wd, &amp;stat); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("statfs: %w", err)
+        }</span>
+
+        // Calculate available space in MB
+        <span class="cov1" title="1">availableBytes := stat.Bavail * uint64(stat.Bsize)
+        requiredBytes := uint64(requiredMB) * 1024 * 1024
+
+        if availableBytes &lt; requiredBytes </span><span class="cov0" title="0">{
+                return fmt.Errorf("insufficient disk space: %d MB required, %d MB available", requiredMB, availableBytes/(1024*1024))
+        }</span>
+        <span class="cov1" title="1">return nil</span>
+}
+
+func escapeFFmpegText(text string) string <span class="cov0" title="0">{
+        // Simple escaping for ffmpeg drawtext: escape single quotes and backslashes
+        // Replace ' with '\''
+        // Replace \ with \\
+        // This is basic; for production use a proper escaping function
+        result := ""
+        for _, r := range text </span><span class="cov0" title="0">{
+                if r == '\'' </span><span class="cov0" title="0">{
+                        result += "'\\''"
+                }</span> else<span class="cov0" title="0"> if r == '\\' </span><span class="cov0" title="0">{
+                        result += "\\\\"
+                }</span> else<span class="cov0" title="0"> {
+                        result += string(r)
+                }</span>
+        }
+        <span class="cov0" title="0">return result</span>
+}
 </pre>
 		
 		<pre class="file" id="file40" style="display: none">package access
@@ -5254,7 +5457,7 @@ type TokenBudget struct {
         OnHardStop   func()
 }
 
-func NewTokenBudget(dailyLimit int) *TokenBudget <span class="cov5" title="40">{
+func NewTokenBudget(dailyLimit int) *TokenBudget <span class="cov5" title="46">{
         return &amp;TokenBudget{
                 DailyLimit: dailyLimit,
                 ResetAt:    startOfTomorrow(),
@@ -5314,7 +5517,7 @@ func (t *TokenBudget) Refund(tokens int) <span class="cov9" title="1129">{
         }</span>
 }
 
-func startOfTomorrow() time.Time <span class="cov5" title="40">{
+func startOfTomorrow() time.Time <span class="cov5" title="46">{
         tomorrow := time.Now().Add(24 * time.Hour)
         return time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, tomorrow.Location())
 }</span>
@@ -5353,7 +5556,7 @@ func NewGenerator(
         store database.GeneratedContentStore,
         m metrics.MetricsCollector,
         renderers []renderer.FormatRenderer,
-) *Generator <span class="cov4" title="28">{
+) *Generator <span class="cov4" title="34">{
         return &amp;Generator{
                 llm:       llmProvider,
                 budget:    budget,
@@ -5364,7 +5567,7 @@ func NewGenerator(
         }
 }</span>
 
-func (g *Generator) SetReviewQueue(rq *ReviewQueue) <span class="cov0" title="0">{
+func (g *Generator) SetReviewQueue(rq *ReviewQueue) <span class="cov2" title="6">{
         g.reviewQueue = rq
 }</span>
 
@@ -5542,7 +5745,7 @@ type QualityGate struct {
         threshold float64
 }
 
-func NewQualityGate(threshold float64) *QualityGate <span class="cov5" title="40">{
+func NewQualityGate(threshold float64) *QualityGate <span class="cov5" title="46">{
         return &amp;QualityGate{threshold: threshold}
 }</span>
 
@@ -5575,11 +5778,11 @@ type ReviewQueue struct {
         store database.GeneratedContentStore
 }
 
-func NewReviewQueue(store database.GeneratedContentStore) *ReviewQueue <span class="cov10" title="8">{
+func NewReviewQueue(store database.GeneratedContentStore) *ReviewQueue <span class="cov10" title="14">{
         return &amp;ReviewQueue{store: store}
 }</span>
 
-func (rq *ReviewQueue) AddToReview(ctx context.Context, content *models.GeneratedContent) error <span class="cov4" title="2">{
+func (rq *ReviewQueue) AddToReview(ctx context.Context, content *models.GeneratedContent) error <span class="cov3" title="2">{
         content.PassedQualityGate = false
         if rq.store != nil </span><span class="cov1" title="1">{
                 return rq.store.Create(ctx, content)
@@ -5587,22 +5790,22 @@ func (rq *ReviewQueue) AddToReview(ctx context.Context, content *models.Generate
         <span class="cov1" title="1">return nil</span>
 }
 
-func (rq *ReviewQueue) ListPending(ctx context.Context) ([]*models.GeneratedContent, error) <span class="cov7" title="4">{
+func (rq *ReviewQueue) ListPending(ctx context.Context) ([]*models.GeneratedContent, error) <span class="cov5" title="4">{
         if rq.store == nil </span><span class="cov1" title="1">{
                 return nil, nil
         }</span>
-        <span class="cov5" title="3">return rq.store.GetByQualityRange(ctx, 0, 0.75)</span>
+        <span class="cov4" title="3">return rq.store.GetByQualityRange(ctx, 0, 0.75)</span>
 }
 
-func (rq *ReviewQueue) Approve(ctx context.Context, contentID string) error <span class="cov4" title="2">{
+func (rq *ReviewQueue) Approve(ctx context.Context, contentID string) error <span class="cov3" title="2">{
         if rq.store == nil </span><span class="cov0" title="0">{
                 return nil
         }</span>
-        <span class="cov4" title="2">content, err := rq.store.GetByID(ctx, contentID)
+        <span class="cov3" title="2">content, err := rq.store.GetByID(ctx, contentID)
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("get content for approval: %w", err)
         }</span>
-        <span class="cov4" title="2">if content == nil </span><span class="cov1" title="1">{
+        <span class="cov3" title="2">if content == nil </span><span class="cov1" title="1">{
                 return fmt.Errorf("content not found: %s", contentID)
         }</span>
         <span class="cov1" title="1">content.PassedQualityGate = true
@@ -5684,13 +5887,13 @@ func (m *ExclusiveTierMapping) MapTier(repoStars, repoForks int, allTiers []Tier
         <span class="cov0" title="0">return ""</span>
 }
 
-func NewTierMapping(strategy string) TierMappingStrategy <span class="cov4" title="17">{
+func NewTierMapping(strategy string) TierMappingStrategy <span class="cov4" title="18">{
         switch strategy </span>{
         case "modular":<span class="cov1" title="2">
                 return &amp;ModularTierMapping{}</span>
         case "exclusive":<span class="cov1" title="1">
                 return &amp;ExclusiveTierMapping{}</span>
-        default:<span class="cov4" title="14">
+        default:<span class="cov4" title="15">
                 return &amp;LinearTierMapping{}</span>
         }
 }
@@ -5700,7 +5903,7 @@ type TierMapper struct {
         mu       sync.RWMutex
 }
 
-func NewTierMapper(strategy string) *TierMapper <span class="cov4" title="12">{
+func NewTierMapper(strategy string) *TierMapper <span class="cov4" title="13">{
         return &amp;TierMapper{
                 strategy: NewTierMapping(strategy),
         }
@@ -5732,6 +5935,10 @@ import (
         "unicode"
 )
 
+var (
+        SignalNotify = signal.Notify
+)
+
 type Pattern struct {
         Pattern     string
         IsNegation  bool
@@ -5745,220 +5952,224 @@ type Repoignore struct {
         path     string
 }
 
-func ParseRepoignoreFile(path string) (*Repoignore, error) <span class="cov4" title="17">{
+func ParseRepoignoreFile(path string) (*Repoignore, error) <span class="cov5" title="42">{
         r := &amp;Repoignore{path: path}
         if _, err := os.Stat(path); os.IsNotExist(err) </span><span class="cov3" title="6">{
                 return r, nil
         }</span>
-        <span class="cov4" title="11">file, err := os.Open(path)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov5" title="36">file, err := os.Open(path)
+        if err != nil </span><span class="cov2" title="3">{
                 return nil, err
         }</span>
-        <span class="cov4" title="11">defer file.Close()
+        <span class="cov5" title="33">defer file.Close()
         scanner := bufio.NewScanner(file)
         var rawPatterns []Pattern
-        for scanner.Scan() </span><span class="cov4" title="16">{
+        for scanner.Scan() </span><span class="cov6" title="50">{
                 line := strings.TrimRight(scanner.Text(), " \t\r")
                 if line == "" || strings.HasPrefix(line, "#") </span><span class="cov2" title="4">{
                         continue</span>
                 }
-                <span class="cov4" title="12">pattern := Pattern{Raw: line}
-                if strings.HasPrefix(line, "!") </span><span class="cov1" title="1">{
+                <span class="cov5" title="46">pattern := Pattern{Raw: line}
+                if strings.HasPrefix(line, "!") </span><span class="cov3" title="6">{
                         pattern.IsNegation = true
                         pattern.Pattern = line[1:]
-                }</span> else<span class="cov4" title="11"> {
+                }</span> else<span class="cov5" title="40"> {
                         pattern.Pattern = line
                 }</span>
-                <span class="cov4" title="12">if strings.HasSuffix(pattern.Pattern, "/**") || strings.HasSuffix(pattern.Pattern, "/**/") </span><span class="cov1" title="1">{
+                <span class="cov5" title="46">if strings.HasSuffix(pattern.Pattern, "/**") || strings.HasSuffix(pattern.Pattern, "/**/") </span><span class="cov3" title="6">{
                         pattern.IsRecursive = true
                 }</span>
-                <span class="cov4" title="12">rawPatterns = append(rawPatterns, pattern)</span>
+                <span class="cov5" title="46">rawPatterns = append(rawPatterns, pattern)</span>
         }
-        <span class="cov4" title="11">if err := scanner.Err(); err != nil </span><span class="cov0" title="0">{
+        <span class="cov5" title="33">if err := scanner.Err(); err != nil </span><span class="cov1" title="1">{
                 return nil, err
         }</span>
         // Filter invalid patterns and log warnings
-        <span class="cov4" title="11">filtered, issues := filterValidPatterns(rawPatterns)
-        for _, issue := range issues </span><span class="cov1" title="1">{
+        <span class="cov5" title="32">filtered, issues := filterValidPatterns(rawPatterns)
+        for _, issue := range issues </span><span class="cov3" title="5">{
                 slog.Warn("repoignore validation", "issue", issue)
         }</span>
-        <span class="cov4" title="11">r.patterns = filtered
+        <span class="cov5" title="32">r.patterns = filtered
         return r, nil</span>
 }
 
-func (r *Repoignore) Match(repoURL string) bool <span class="cov10" title="1046">{
+func (r *Repoignore) Match(repoURL string) bool <span class="cov10" title="1105">{
         r.mu.RLock()
         defer r.mu.RUnlock()
 
         url := normalizeForMatch(repoURL)
         matched := false
 
-        for _, p := range r.patterns </span><span class="cov5" title="26">{
-                if r.matchPattern(url, p) </span><span class="cov4" title="18">{
-                        if p.IsNegation </span><span class="cov1" title="1">{
+        for _, p := range r.patterns </span><span class="cov7" title="215">{
+                if r.matchPattern(url, p) </span><span class="cov6" title="70">{
+                        if p.IsNegation </span><span class="cov4" title="15">{
                                 matched = false
-                        }</span> else<span class="cov4" title="17"> {
+                        }</span> else<span class="cov6" title="55"> {
                                 matched = true
                         }</span>
                 }
         }
 
-        <span class="cov10" title="1046">return matched</span>
+        <span class="cov10" title="1105">return matched</span>
 }
 
-func (r *Repoignore) matchPattern(url string, p Pattern) bool <span class="cov5" title="26">{
+func (r *Repoignore) matchPattern(url string, p Pattern) bool <span class="cov7" title="215">{
         pattern := p.Pattern
         pattern = strings.TrimSuffix(pattern, "/**")
         pattern = strings.TrimSuffix(pattern, "/")
         if pattern == "**" </span><span class="cov1" title="1">{
                 return true
         }</span>
-        <span class="cov5" title="25">if strings.Contains(pattern, "**") </span><span class="cov0" title="0">{
+        <span class="cov7" title="214">if strings.Contains(pattern, "**") </span><span class="cov5" title="31">{
                 return r.matchRecursive(url, pattern)
         }</span>
-        <span class="cov5" title="25">if strings.Contains(pattern, "*") </span><span class="cov3" title="5">{
+        <span class="cov7" title="183">if strings.Contains(pattern, "*") </span><span class="cov3" title="7">{
                 return r.matchWildcard(url, pattern)
         }</span>
-        <span class="cov4" title="20">if strings.Contains(pattern, "[") &amp;&amp; strings.Contains(pattern, "]") </span><span class="cov3" title="5">{
+        <span class="cov7" title="176">if strings.Contains(pattern, "[") &amp;&amp; strings.Contains(pattern, "]") </span><span class="cov6" title="53">{
                 return r.matchCharClass(url, pattern)
         }</span>
-        <span class="cov4" title="15">return strings.Contains(url, pattern)</span>
+        <span class="cov7" title="123">return strings.Contains(url, pattern)</span>
 }
 
-func (r *Repoignore) matchWildcard(url, pattern string) bool <span class="cov3" title="5">{
+func (r *Repoignore) matchWildcard(url, pattern string) bool <span class="cov3" title="7">{
         parts := strings.Split(pattern, "*")
-        if len(parts) == 2 </span><span class="cov3" title="5">{
+        if len(parts) == 2 </span><span class="cov3" title="6">{
                 return strings.HasPrefix(url, parts[0]) &amp;&amp; strings.HasSuffix(url, parts[1])
         }</span>
-        <span class="cov0" title="0">return false</span>
+        <span class="cov1" title="1">return false</span>
 }
 
-func (r *Repoignore) matchRecursive(url, pattern string) bool <span class="cov0" title="0">{
+func (r *Repoignore) matchRecursive(url, pattern string) bool <span class="cov5" title="31">{
         pattern = strings.ReplaceAll(pattern, "**/", "*")
         pattern = strings.ReplaceAll(pattern, "/**", "")
         parts := strings.Split(pattern, "*")
-        for _, part := range parts </span><span class="cov0" title="0">{
-                if part == "" </span><span class="cov0" title="0">{
+        for _, part := range parts </span><span class="cov5" title="40">{
+                if part == "" </span><span class="cov1" title="2">{
                         continue</span>
                 }
-                <span class="cov0" title="0">if !strings.Contains(url, part) </span><span class="cov0" title="0">{
+                <span class="cov5" title="38">if !strings.Contains(url, part) </span><span class="cov5" title="25">{
                         return false
                 }</span>
         }
-        <span class="cov0" title="0">return true</span>
+        <span class="cov3" title="6">return true</span>
 }
 
-func (r *Repoignore) matchCharClass(url, pattern string) bool <span class="cov3" title="5">{
+func (r *Repoignore) matchCharClass(url, pattern string) bool <span class="cov6" title="53">{
         start := strings.Index(pattern, "[")
         end := strings.Index(pattern, "]")
-        if start == -1 || end == -1 || end &lt;= start </span><span class="cov0" title="0">{
+        if start == -1 || end == -1 || end &lt;= start </span><span class="cov1" title="1">{
                 return false
         }</span>
-        <span class="cov3" title="5">prefix := pattern[:start]
+        <span class="cov6" title="52">prefix := pattern[:start]
         suffix := pattern[end+1:]
         class := pattern[start+1 : end]
-        if !strings.HasPrefix(url, prefix) </span><span class="cov0" title="0">{
+        if !strings.HasPrefix(url, prefix) </span><span class="cov5" title="23">{
                 return false
         }</span>
-        <span class="cov3" title="5">if suffix != "" &amp;&amp; !strings.HasSuffix(url, suffix) </span><span class="cov0" title="0">{
+        <span class="cov5" title="29">idx := len(prefix)
+        if idx &gt;= len(url) </span><span class="cov2" title="4">{
                 return false
         }</span>
-        <span class="cov3" title="5">idx := len(prefix)
-        if idx &gt;= len(url) </span><span class="cov0" title="0">{
+        // suffix must start at idx+1
+        <span class="cov5" title="25">if len(suffix) &gt; len(url)-(idx+1) </span><span class="cov1" title="1">{
                 return false
         }</span>
-        <span class="cov3" title="5">for _, c := range class </span><span class="cov3" title="10">{
-                if unicode.ToLower(c) == unicode.ToLower(rune(url[idx])) </span><span class="cov2" title="3">{
+        <span class="cov5" title="24">if suffix != "" &amp;&amp; url[idx+1:] != suffix </span><span class="cov1" title="1">{
+                return false
+        }</span>
+        <span class="cov5" title="23">for _, c := range class </span><span class="cov5" title="47">{
+                if unicode.ToLower(c) == unicode.ToLower(rune(url[idx])) </span><span class="cov4" title="17">{
                         return true
                 }</span>
         }
-        <span class="cov1" title="2">return false</span>
+        <span class="cov3" title="6">return false</span>
 }
 
-func (r *Repoignore) Reload() error <span class="cov0" title="0">{
-        if r.path == "" </span><span class="cov0" title="0">{
+func (r *Repoignore) Reload() error <span class="cov3" title="5">{
+        if r.path == "" </span><span class="cov1" title="1">{
                 return nil
         }</span>
-        <span class="cov0" title="0">newR, err := ParseRepoignoreFile(r.path)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov2" title="4">newR, err := ParseRepoignoreFile(r.path)
+        if err != nil </span><span class="cov1" title="2">{
                 return err
         }</span>
-        <span class="cov0" title="0">r.mu.Lock()
+        <span class="cov1" title="2">r.mu.Lock()
         r.patterns = newR.patterns
         r.mu.Unlock()
         return nil</span>
 }
 
-func (r *Repoignore) WatchSIGHUP() <span class="cov3" title="5">{
+func (r *Repoignore) WatchSIGHUP() <span class="cov3" title="8">{
         ch := make(chan os.Signal, 1)
-        signal.Notify(ch, syscall.SIGHUP)
-        go func() </span><span class="cov2" title="4">{
-                for range ch </span><span class="cov0" title="0">{
-                        if err := r.Reload(); err != nil </span><span class="cov0" title="0">{
+        SignalNotify(ch, syscall.SIGHUP)
+        go func() </span><span class="cov3" title="7">{
+                for range ch </span><span class="cov1" title="2">{
+                        if err := r.Reload(); err != nil </span><span class="cov1" title="1">{
                                 slog.Error("repoignore reload failed", "error", err)
                         }</span>
                 }
         }()
 }
 
-func ValidatePatterns(patterns []Pattern) []string <span class="cov0" title="0">{
+func ValidatePatterns(patterns []Pattern) []string <span class="cov1" title="1">{
         var issues []string
-        for _, p := range patterns </span><span class="cov0" title="0">{
+        for _, p := range patterns </span><span class="cov2" title="4">{
                 raw := p.Raw
-                if strings.Contains(raw, "[") &amp;&amp; !strings.Contains(raw, "]") </span><span class="cov0" title="0">{
+                if strings.Contains(raw, "[") &amp;&amp; !strings.Contains(raw, "]") </span><span class="cov1" title="1">{
                         issues = append(issues, "unclosed bracket: "+raw)
                 }</span>
-                <span class="cov0" title="0">if strings.Contains(raw, "]") &amp;&amp; !strings.Contains(raw, "[") </span><span class="cov0" title="0">{
+                <span class="cov2" title="4">if strings.Contains(raw, "]") &amp;&amp; !strings.Contains(raw, "[") </span><span class="cov1" title="1">{
                         issues = append(issues, "unmatched closing bracket: "+raw)
                 }</span>
-                <span class="cov0" title="0">trimmed := strings.TrimRight(raw, " \t")
-                if trimmed != raw </span><span class="cov0" title="0">{
+                <span class="cov2" title="4">trimmed := strings.TrimRight(raw, " \t")
+                if trimmed != raw </span><span class="cov1" title="1">{
                         issues = append(issues, "trailing whitespace: "+raw)
                 }</span>
         }
-        <span class="cov0" title="0">return issues</span>
+        <span class="cov1" title="1">return issues</span>
 }
 
 // filterValidPatterns filters out invalid patterns and returns the filtered slice and any validation issues.
 // Invalid patterns are those with unclosed brackets or unmatched closing brackets.
 // Patterns with trailing whitespace are kept after trimming.
-func filterValidPatterns(patterns []Pattern) ([]Pattern, []string) <span class="cov4" title="11">{
+func filterValidPatterns(patterns []Pattern) ([]Pattern, []string) <span class="cov5" title="39">{
         var valid []Pattern
         var issues []string
-        for _, p := range patterns </span><span class="cov4" title="12">{
+        for _, p := range patterns </span><span class="cov6" title="55">{
                 raw := p.Raw
                 // Check for bracket errors
-                if strings.Contains(raw, "[") &amp;&amp; !strings.Contains(raw, "]") </span><span class="cov1" title="1">{
+                if strings.Contains(raw, "[") &amp;&amp; !strings.Contains(raw, "]") </span><span class="cov3" title="5">{
                         issues = append(issues, "unclosed bracket: "+raw)
                         continue</span>
                 }
-                <span class="cov4" title="11">if strings.Contains(raw, "]") &amp;&amp; !strings.Contains(raw, "[") </span><span class="cov0" title="0">{
+                <span class="cov6" title="50">if strings.Contains(raw, "]") &amp;&amp; !strings.Contains(raw, "[") </span><span class="cov2" title="4">{
                         issues = append(issues, "unmatched closing bracket: "+raw)
                         continue</span>
                 }
                 // Trim trailing whitespace from raw line and adjust pattern fields
-                <span class="cov4" title="11">trimmed := strings.TrimRight(raw, " \t")
-                if trimmed != raw </span><span class="cov0" title="0">{
+                <span class="cov5" title="46">trimmed := strings.TrimRight(raw, " \t")
+                if trimmed != raw </span><span class="cov2" title="3">{
                         issues = append(issues, "trailing whitespace: "+raw)
                         // Update the pattern with trimmed raw and pattern fields
                         p.Raw = trimmed
-                        if p.IsNegation </span><span class="cov0" title="0">{
+                        if p.IsNegation </span><span class="cov1" title="1">{
                                 p.Pattern = trimmed[1:]
-                        }</span> else<span class="cov0" title="0"> {
+                        }</span> else<span class="cov1" title="2"> {
                                 p.Pattern = trimmed
                         }</span>
                         // Re-evaluate recursive suffix after trimming
-                        <span class="cov0" title="0">p.IsRecursive = false
-                        if strings.HasSuffix(p.Pattern, "/**") || strings.HasSuffix(p.Pattern, "/**/") </span><span class="cov0" title="0">{
+                        <span class="cov2" title="3">p.IsRecursive = false
+                        if strings.HasSuffix(p.Pattern, "/**") || strings.HasSuffix(p.Pattern, "/**/") </span><span class="cov1" title="1">{
                                 p.IsRecursive = true
                         }</span>
                 }
-                <span class="cov4" title="11">valid = append(valid, p)</span>
+                <span class="cov5" title="46">valid = append(valid, p)</span>
         }
-        <span class="cov4" title="11">return valid, issues</span>
+        <span class="cov5" title="39">return valid, issues</span>
 }
 
-func normalizeForMatch(url string) string <span class="cov10" title="1046">{
+func normalizeForMatch(url string) string <span class="cov10" title="1105">{
         url = strings.TrimSpace(url)
         url = strings.TrimSuffix(url, ".git")
         url = strings.TrimPrefix(url, "https://")
@@ -5978,7 +6189,7 @@ type Alert interface {
 
 type LogAlert struct{}
 
-func (a *LogAlert) Send(subject, body string) {<span class="cov0" title="0">}</span>
+func (a *LogAlert) Send(subject, body string) {<span class="cov8" title="1">}</span>
 </pre>
 		
 		<pre class="file" id="file49" style="display: none">package sync
@@ -6006,25 +6217,25 @@ type Checkpoint struct {
         ResumeFrom       int      `json:"resume_from"`
 }
 
-func NewCheckpointManager(db database.Database) *CheckpointManager <span class="cov10" title="11">{
+func NewCheckpointManager(db database.Database) *CheckpointManager <span class="cov10" title="12">{
         return &amp;CheckpointManager{
                 db:             db,
                 checkpointFile: filepath.Join(os.TempDir(), "patreon-manager-checkpoint.json"),
         }
 }</span>
 
-func NewCheckpointManagerWithFile(dir string) *CheckpointManager <span class="cov5" title="3">{
+func NewCheckpointManagerWithFile(dir string) *CheckpointManager <span class="cov4" title="3">{
         return &amp;CheckpointManager{
                 checkpointFile: filepath.Join(dir, "patreon-manager-checkpoint.json"),
         }
 }</span>
 
-func (cm *CheckpointManager) SaveCheckpoint(state Checkpoint) error <span class="cov5" title="3">{
+func (cm *CheckpointManager) SaveCheckpoint(state Checkpoint) error <span class="cov4" title="3">{
         data, err := json.Marshal(state)
         if err != nil </span><span class="cov0" title="0">{
                 return fmt.Errorf("marshal checkpoint: %w", err)
         }</span>
-        <span class="cov5" title="3">return os.WriteFile(cm.checkpointFile, data, 0644)</span>
+        <span class="cov4" title="3">return os.WriteFile(cm.checkpointFile, data, 0644)</span>
 }
 
 func (cm *CheckpointManager) LoadCheckpoint() (*Checkpoint, error) <span class="cov6" title="4">{
@@ -6135,7 +6346,7 @@ type EventDeduplicator struct {
         window time.Duration
 }
 
-func NewEventDeduplicator(window time.Duration) *EventDeduplicator <span class="cov4" title="15">{
+func NewEventDeduplicator(window time.Duration) *EventDeduplicator <span class="cov4" title="16">{
         ed := &amp;EventDeduplicator{
                 seen:   make(map[string]time.Time),
                 window: window,
@@ -6144,23 +6355,23 @@ func NewEventDeduplicator(window time.Duration) *EventDeduplicator <span class="
         return ed
 }</span>
 
-func (ed *EventDeduplicator) TrackEvent(eventID string) <span class="cov9" title="1115">{
+func (ed *EventDeduplicator) TrackEvent(eventID string) <span class="cov9" title="1116">{
         ed.mu.Lock()
         defer ed.mu.Unlock()
         ed.seen[eventID] = time.Now()
 }</span>
 
-func (ed *EventDeduplicator) IsDuplicate(eventID string) bool <span class="cov10" title="2033">{
+func (ed *EventDeduplicator) IsDuplicate(eventID string) bool <span class="cov10" title="2035">{
         ed.mu.RLock()
         defer ed.mu.RUnlock()
         t, exists := ed.seen[eventID]
-        if !exists </span><span class="cov6" title="109">{
+        if !exists </span><span class="cov6" title="110">{
                 return false
         }</span>
-        <span class="cov9" title="1924">return time.Since(t) &lt; ed.window</span>
+        <span class="cov9" title="1925">return time.Since(t) &lt; ed.window</span>
 }
 
-func (ed *EventDeduplicator) cleanup() <span class="cov4" title="15">{
+func (ed *EventDeduplicator) cleanup() <span class="cov4" title="16">{
         ticker := time.NewTicker(1 * time.Minute)
         defer ticker.Stop()
         for range ticker.C </span><span class="cov0" title="0">{
@@ -6264,7 +6475,7 @@ type LockManager struct {
         mu       sync.Mutex
 }
 
-func NewLockManager(db database.Database) *LockManager <span class="cov10" title="15">{
+func NewLockManager(db database.Database) *LockManager <span class="cov10" title="16">{
         hostname, _ := os.Hostname()
         return &amp;LockManager{
                 db:       db,
@@ -6273,7 +6484,7 @@ func NewLockManager(db database.Database) *LockManager <span class="cov10" title
         }
 }</span>
 
-func (lm *LockManager) AcquireLock(ctx context.Context) error <span class="cov10" title="15">{
+func (lm *LockManager) AcquireLock(ctx context.Context) error <span class="cov9" title="15">{
         lm.mu.Lock()
         defer lm.mu.Unlock()
 
@@ -6293,7 +6504,7 @@ func (lm *LockManager) AcquireLock(ctx context.Context) error <span class="cov10
                 return err
         }</span>
 
-        <span class="cov10" title="15">if err := lm.db.AcquireLock(ctx, lockInfo); err != nil </span><span class="cov3" title="2">{
+        <span class="cov9" title="15">if err := lm.db.AcquireLock(ctx, lockInfo); err != nil </span><span class="cov3" title="2">{
                 lm.releaseFileLock()
                 return errors.LockContention(fmt.Sprintf("DB lock failed: %v", err))
         }</span>
@@ -6320,7 +6531,7 @@ func (lm *LockManager) IsLocked(ctx context.Context) (bool, *database.SyncLock, 
         <span class="cov1" title="1">return lm.db.IsLocked(ctx)</span>
 }
 
-func (lm *LockManager) acquireFileLock(pid int) error <span class="cov10" title="15">{
+func (lm *LockManager) acquireFileLock(pid int) error <span class="cov9" title="15">{
         content := fmt.Sprintf("%d:%s:%s", pid, lm.hostname, time.Now().Format(time.RFC3339))
         return os.WriteFile(lm.lockFile, []byte(content), 0644)
 }</span>
@@ -6460,11 +6671,11 @@ func NewOrchestrator(
         m metrics.MetricsCollector,
         logger *slog.Logger,
         tierMapper *content.TierMapper,
-) *Orchestrator <span class="cov3" title="10">{
-        if tierMapper == nil </span><span class="cov3" title="10">{
+) *Orchestrator <span class="cov3" title="11">{
+        if tierMapper == nil </span><span class="cov3" title="11">{
                 tierMapper = content.NewTierMapper("linear")
         }</span>
-        <span class="cov3" title="10">return &amp;Orchestrator{
+        <span class="cov3" title="11">return &amp;Orchestrator{
                 db:         db,
                 providers:  providers,
                 patreon:    patreonClient,
@@ -7140,7 +7351,7 @@ type Scheduler struct {
         logger *slog.Logger
 }
 
-func NewScheduler(runner SyncRunner, opts SyncOptions, alert Alert, logger *slog.Logger) *Scheduler <span class="cov10" title="5">{
+func NewScheduler(runner SyncRunner, opts SyncOptions, alert Alert, logger *slog.Logger) *Scheduler <span class="cov10" title="6">{
         return &amp;Scheduler{
                 cron:   cron.New(),
                 runner: runner,
@@ -7150,16 +7361,16 @@ func NewScheduler(runner SyncRunner, opts SyncOptions, alert Alert, logger *slog
         }
 }</span>
 
-func (s *Scheduler) Start(schedule string) error <span class="cov10" title="5">{
-        _, err := s.cron.AddFunc(schedule, func() </span><span class="cov10" title="5">{
+func (s *Scheduler) Start(schedule string) error <span class="cov10" title="6">{
+        _, err := s.cron.AddFunc(schedule, func() </span><span class="cov9" title="5">{
                 ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)
                 defer cancel()
 
-                if s.logger != nil </span><span class="cov10" title="5">{
+                if s.logger != nil </span><span class="cov9" title="5">{
                         s.logger.Info("scheduled sync started")
                 }</span>
 
-                <span class="cov10" title="5">result, err := s.runner.Run(ctx, s.opts)
+                <span class="cov9" title="5">result, err := s.runner.Run(ctx, s.opts)
                 if err != nil </span><span class="cov4" title="2">{
                         if s.alert != nil </span><span class="cov4" title="2">{
                                 s.alert.Send("Sync Failed", err.Error())
@@ -7170,22 +7381,22 @@ func (s *Scheduler) Start(schedule string) error <span class="cov10" title="5">{
                         <span class="cov4" title="2">return</span>
                 }
 
-                <span class="cov7" title="3">if s.logger != nil </span><span class="cov7" title="3">{
+                <span class="cov6" title="3">if s.logger != nil </span><span class="cov6" title="3">{
                         s.logger.Info("scheduled sync completed",
                                 slog.Int("processed", result.Processed),
                                 slog.Int("failed", result.Failed),
                         )
                 }</span>
         })
-        <span class="cov10" title="5">if err != nil </span><span class="cov1" title="1">{
+        <span class="cov10" title="6">if err != nil </span><span class="cov1" title="1">{
                 return err
         }</span>
 
-        <span class="cov8" title="4">s.cron.Start()
+        <span class="cov9" title="5">s.cron.Start()
         return nil</span>
 }
 
-func (s *Scheduler) Stop() <span class="cov8" title="4">{
+func (s *Scheduler) Stop() <span class="cov9" title="5">{
         ctx := s.cron.Stop()
         &lt;-ctx.Done()
 }</span>

@@ -1,60 +1,76 @@
-# CLAUDE.md - Project Guidelines for AI Assistants
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Security First
 
-**NO TOKENS IN VERSION CONTROL**: Under no circumstances may any token, API key, password, or secret be committed to git. This includes:
-- Real credentials in test files, configuration examples, or documentation
-- Partial or masked tokens that could be reconstructed
-- Placeholder values that resemble real tokens (e.g., `ghp_1234567890...`)
+**NO TOKENS IN VERSION CONTROL**: Never commit tokens, API keys, passwords, or secrets — including partial, masked, or realistic-looking placeholders (e.g. `ghp_1234...`).
 
-**Redaction Rules**:
-- All test files must use placeholder values like `***`, `your_client_id_here`, `test-access-token`
-- Documentation examples must use `your_client_id_here`, `your_client_secret_here`
-- `.env.example` is the only tracked file with placeholders
-- Real credentials belong only in `.env` (gitignored) or environment variables
+**Redaction rules**:
+- Test files and docs use `***`, `your_client_id_here`, `your_client_secret_here`, `test-access-token`
+- `.env.example` is the only tracked file with placeholders; real values go in `.env` (gitignored) or env vars
 
-**Incident Response**:
-If a token is accidentally committed:
-1. Rotate the exposed credential immediately
-2. Use `git-filter-repo` with replace-text rules to purge from history
-3. Force-push to all remotes (GitHub, GitLab, GitFlic, GitVerse)
-4. Update any exposed test files with redacted values
+**If a credential is ever committed**: rotate immediately, purge with `git-filter-repo` + replace-text rules, then force-push to all four mirrors.
 
-## Project Context
+## Project
 
-My Patreon Manager is a Go application that:
-- Scans Git repositories across GitHub, GitLab, GitFlic, GitVerse
-- Generates content via LLMsVerifier with quality gates  
-- Publishes to Patreon with tier-gated access
-- Runs as CLI-first with idempotent operations
+Go 1.26.1 application that scans Git repositories across GitHub, GitLab, GitFlic, and GitVerse, generates content via an LLM pipeline with quality gates, and publishes tier-gated posts to Patreon. Module: `github.com/milos85vasic/My-Patreon-Manager`. HTTP framework: Gin.
 
-## Key Files
+Two entrypoints:
+- `cmd/cli` (`patreon-manager`) — primary interface; subcommands `sync`, `scan`, `generate`, `validate`, `publish`. Supports `--dry-run`, `--schedule` (cron), `--org`, `--repo`, `--pattern`, `--json`, `--log-level`.
+- `cmd/server` — Gin HTTP server on `:8080` exposing health, metrics (Prometheus), and webhook handlers.
 
-- `.specify/memory/constitution.md` - Architectural principles (MUST follow)
-- `specs/001-patreon-manager-app/tasks.md` - Implementation tasks
-- `AGENTS.md` - Project reference for AI assistants
-- `scripts/coverage.sh` - Test coverage checker (requires 100% per package)
+## Common Commands
 
-## Development Standards
+```sh
+go build ./...                                  # build all packages
+go run ./cmd/cli sync --dry-run                 # dry-run a sync
+go run ./cmd/cli validate                       # validate config/env
+go run ./cmd/server                             # run HTTP server
+go test ./internal/... ./cmd/... ./tests/...    # run full test suite
+go test ./internal/services/sync/... -run TestOrchestrator_Run -v   # single test
+go test -race ./...                             # race detector
+go vet ./...                                    # static analysis
+bash scripts/coverage.sh                        # full coverage run — gates commits
+```
 
-- **100% test coverage** for all `internal/` and `cmd/` packages (enforced by coverage script)
-- Follow Go conventions, Gin framework patterns
-- Modular plugin architecture for providers
-- Idempotent operations, CLI-first design
-- Resilience patterns: circuit breakers, rate limiting, exponential backoff
+`scripts/coverage.sh` enforces **100% per-package coverage** for everything under `internal/` and `cmd/`. It fails the build if any package (or the total) drops below 100%. Run it before committing.
 
-## Git Workflow
+## Architecture
 
-- Repository mirrors to four upstreams (GitHub, GitLab, GitFlic, GitVerse)
-- Use `Upstreams/` scripts for multi-platform pushes
-- Branch protection may be enabled on some remotes
-- Prefer merge requests over force-pushing to protected branches
+The codebase follows a provider/service layering where the CLI and server are thin wrappers around a shared orchestration core.
 
-## When Implementing Features
+**`internal/providers/`** — pluggable external integrations behind Go interfaces (see `.specify/memory/constitution.md` principle I):
+- `git/` — `RepositoryProvider` implementations for GitHub/GitLab/GitFlic/GitVerse with per-service auth, pagination, rate limiting, mirror detection, and `.repoignore` filtering
+- `llm/` — `LLMProvider` with fallback + verifier (quality gates)
+- `patreon/` — Patreon API client with tier gating
+- `renderer/` — `FormatRenderer` for Markdown/HTML/PDF (and planned video)
 
-1. Check tasks.md for relevant user story
-2. Follow constitution principles
-3. Write tests first (TDD)
-4. Ensure 100% coverage for affected packages
-5. Run `bash scripts/coverage.sh` before committing
-6. Never commit credentials
+**`internal/services/`** — orchestration layered on top of providers:
+- `sync/` — `Orchestrator` is the top-level coordinator wiring providers + generator + db + metrics; consumed by both `cmd/cli` and `cmd/server`
+- `content/` — content `Generator` and `TierMapper`
+- `filter/` — repo selection / `.repoignore`
+- `access/`, `audit/` — tier access control, audit logging
+
+**`internal/`** cross-cutting: `config` (env + file loader, validation), `database` (SQLite default, PostgreSQL option), `handlers` (HTTP + webhooks), `middleware`, `metrics` (Prometheus collector interface), `models`, `errors`, `utils`.
+
+**Dependency-injection pattern**: `cmd/cli/main.go` and `cmd/server/main.go` both expose package-level function variables (`newConfig`, `newDatabase`, `newOrchestrator`, `newMetricsCollector`, `osExit`, etc.) that tests swap out. When editing these entrypoints, preserve that indirection — tests hit 100% coverage by overriding those variables.
+
+**Idempotency & resilience** are load-bearing constraints (constitution principles II & VI): every Patreon mutation must be safely re-runnable via content fingerprinting and checkpointing; providers must implement circuit breakers, rate limiting, and exponential backoff. Don't remove these patterns when refactoring.
+
+## Authoritative References
+
+- `.specify/memory/constitution.md` — architectural principles (I–VII). Read before non-trivial changes; these are enforced, not aspirational.
+- `specs/001-patreon-manager-app/tasks.md` — active implementation tasks and user stories
+- `AGENTS.md` — companion reference; may lag behind current code state, verify before trusting
+
+## Feature Workflow
+
+1. Find the relevant user story in `specs/001-patreon-manager-app/tasks.md`
+2. Check constitution principles that constrain the area
+3. TDD: write tests first, keep package at 100% coverage
+4. Run `bash scripts/coverage.sh` before committing
+
+## Git Mirrors
+
+The repo mirrors to GitHub, GitLab, GitFlic, and GitVerse. Push helper scripts live in `Upstreams/` (one per service). Branch protection may be enabled — prefer merge requests over force-pushing to protected branches. Any history rewrite (e.g. credential purge) must be force-pushed to **all four** remotes.

@@ -113,6 +113,8 @@ func (m *mockRenderer) Render(ctx context.Context, content models.Content, opts 
 }
 
 func TestPDFRenderer_Render_WithOptions(t *testing.T) {
+	// Ensure no browser is found so we get HTML fallback
+	t.Setenv("PATH", "")
 	renderer := NewPDFRenderer()
 	content := models.Content{
 		Title: "Test",

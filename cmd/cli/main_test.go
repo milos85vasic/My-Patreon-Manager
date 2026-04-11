@@ -8,7 +8,9 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 
 	"github.com/milos85vasic/My-Patreon-Manager/internal/config"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/database"
@@ -222,8 +224,36 @@ func TestRunSync_Error(t *testing.T) {
 func TestRunScheduled(t *testing.T) {
 	var logOutput strings.Builder
 	logger := slog.New(slog.NewTextHandler(&logOutput, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	runScheduled(context.Background(), nil, syncsvc.SyncOptions{}, "*/5 * * * *", logger)
-	assert.Contains(t, logOutput.String(), "scheduled mode not yet implemented")
+
+	// mock orchestrator that returns success
+	mockOrch := &mockOrchestrator{
+		runFunc: func(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error) {
+			return &syncsvc.SyncResult{Processed: 1, Failed: 0, Skipped: 0}, nil
+		},
+	}
+	// create a signal channel we can control
+	sigCh := make(chan os.Signal, 1)
+	// start runScheduled in a goroutine (it will block on sigCh)
+	done := make(chan struct{})
+	go func() {
+		runScheduled(context.Background(), mockOrch, syncsvc.SyncOptions{}, "@yearly", logger, sigCh)
+		close(done)
+	}()
+	// wait a bit for scheduler to start
+	time.Sleep(100 * time.Millisecond)
+	// send shutdown signal
+	sigCh <- syscall.SIGTERM
+	// wait for goroutine to finish
+	select {
+	case <-done:
+	case <-time.After(1 * time.Second):
+		t.Fatal("runScheduled did not shut down within 1 second")
+	}
+	// verify logs
+	logStr := logOutput.String()
+	assert.Contains(t, logStr, "scheduler started")
+	assert.Contains(t, logStr, "shutdown signal received")
+	assert.Contains(t, logStr, "scheduler stopped")
 }
 
 func TestMain_Validate(t *testing.T) {
@@ -450,13 +480,25 @@ func TestMain_SyncWithSchedule(t *testing.T) {
 			},
 		}
 	}
+	// mock runScheduledFunc to track calls and avoid blocking
+	var runScheduledCalled bool
+	var runScheduledSchedule string
+	oldRunScheduledFunc := runScheduledFunc
+	defer func() { runScheduledFunc = oldRunScheduledFunc }()
+	runScheduledFunc = func(ctx context.Context, orch orchestrator, opts syncsvc.SyncOptions, schedule string, logger *slog.Logger, testSigCh ...chan os.Signal) {
+		runScheduledCalled = true
+		runScheduledSchedule = schedule
+		// do nothing, just return (simulating immediate shutdown)
+	}
 	// No need to capture log output; the orchestrator call is sufficient.
 	exited, code := withMockExit(t, func() {
 		main()
 	})
 	assert.False(t, exited, "sync with schedule command should not exit with error")
 	assert.Equal(t, 0, code)
-	assert.False(t, orchestratorCalled, "orchestrator should not be called for schedule (runScheduled not implemented)")
+	assert.True(t, runScheduledCalled, "runScheduled should have been called")
+	assert.Equal(t, "*/5 * * * *", runScheduledSchedule)
+	assert.False(t, orchestratorCalled, "orchestrator should not be called because runScheduled mock returns early")
 	assert.False(t, orchestratorOpts.DryRun, "dry-run should default to false")
 }
 

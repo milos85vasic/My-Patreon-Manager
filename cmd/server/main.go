@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,33 +21,72 @@ import (
 	syncsvc "github.com/milos85vasic/My-Patreon-Manager/internal/services/sync"
 )
 
+var (
+	osExit                                              = os.Exit
+	godotenvLoad                                        = godotenv.Load
+	loadFromEnv                                         = (*config.Config).LoadFromEnv
+	newConfig                                           = config.NewConfig
+	newMetricsCollector func() metrics.MetricsCollector = func() metrics.MetricsCollector { return metrics.NewPrometheusCollector() }
+	setupRouterFn                                       = setupRouter
+	runServerFn                                         = runServer
+	signalNotifyContext                                 = signal.NotifyContext
+)
+
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	slog.SetDefault(logger)
 
-	cfg := config.NewConfig()
-	godotenv.Load()
-	cfg.LoadFromEnv()
-
-	r := setupRouter(cfg)
+	cfg := newConfig()
+	godotenvLoad()
+	loadFromEnv(cfg)
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
-	logger.Info("server starting", slog.String("addr", addr))
-	if err := r.Run(addr); err != nil {
+	ctx, stop := signalNotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	if err := runServerFn(ctx, cfg, addr, logger); err != nil {
 		logger.Error("server failed", slog.String("error", err.Error()))
-		os.Exit(1)
+		osExit(1)
 	}
 }
 
-func setupRouter(cfg *config.Config) *gin.Engine {
+func runServer(ctx context.Context, cfg *config.Config, addr string, logger *slog.Logger) error {
+	metricsCollector := newMetricsCollector()
+	r := setupRouterFn(cfg, metricsCollector)
+
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: r,
+	}
+
+	go func() {
+		logger.Info("server starting", slog.String("addr", addr))
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Error("server listen failed", slog.String("error", err.Error()))
+		}
+	}()
+
+	<-ctx.Done()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	logger.Info("server shutting down")
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("shutdown failed: %w", err)
+	}
+
+	return nil
+}
+
+func setupRouter(cfg *config.Config, metricsCollector metrics.MetricsCollector) *gin.Engine {
 	gin.SetMode(cfg.GinMode)
 	r := gin.New()
 
 	r.Use(middleware.Logger())
 	r.Use(gin.Recovery())
 
-	// Create metrics collector and deduplicator for webhooks
-	metricsCollector := metrics.NewPrometheusCollector()
+	// Create deduplicator for webhooks
 	dedup := syncsvc.NewEventDeduplicator(5 * time.Minute)
 	webhookHandler := handlers.NewWebhookHandler(dedup, metricsCollector, slog.Default())
 
