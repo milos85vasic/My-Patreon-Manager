@@ -33,13 +33,14 @@ func (r *cancelAwareRunner) Run(ctx context.Context, opts SyncOptions) (*SyncRes
 // fix, the per-job context was derived from context.Background(), so the
 // job would run for up to an hour regardless of the caller's scope.
 func TestSchedulerRespectsParentCancel(t *testing.T) {
-	defer goleak.VerifyNone(t,
-		// Task 7 (WatchSIGHUP stoppable) will fix this: orchestrator tests
-		// earlier in this package binary spawn an un-stoppable SIGHUP watcher
-		// goroutine that survives into our scheduler tests. Ignoring it here
-		// keeps this task focused on scheduler context propagation.
-		goleak.IgnoreTopFunction("github.com/milos85vasic/My-Patreon-Manager/internal/services/filter.(*Repoignore).WatchSIGHUP.func1"),
-	)
+	defer func() {
+		// Earlier orchestrator tests in this package may have started the
+		// package-level repoignore SIGHUP watcher via loadRepoignore. Stop
+		// it deterministically before the leak check so we don't need any
+		// IgnoreTopFunction escape hatches.
+		StopRepoignoreWatch()
+		goleak.VerifyNone(t)
+	}()
 
 	runner := &cancelAwareRunner{started: make(chan struct{}, 1)}
 	s := NewScheduler(runner, SyncOptions{}, nil, nil)
@@ -84,13 +85,14 @@ func TestSchedulerRespectsParentCancel(t *testing.T) {
 // passing a nil parent is treated as context.Background() so legacy call
 // sites continue to work.
 func TestSchedulerNilParentContext(t *testing.T) {
-	defer goleak.VerifyNone(t,
-		// Task 7 (WatchSIGHUP stoppable) will fix this: orchestrator tests
-		// earlier in this package binary spawn an un-stoppable SIGHUP watcher
-		// goroutine that survives into our scheduler tests. Ignoring it here
-		// keeps this task focused on scheduler context propagation.
-		goleak.IgnoreTopFunction("github.com/milos85vasic/My-Patreon-Manager/internal/services/filter.(*Repoignore).WatchSIGHUP.func1"),
-	)
+	defer func() {
+		// Earlier orchestrator tests in this package may have started the
+		// package-level repoignore SIGHUP watcher via loadRepoignore. Stop
+		// it deterministically before the leak check so we don't need any
+		// IgnoreTopFunction escape hatches.
+		StopRepoignoreWatch()
+		goleak.VerifyNone(t)
+	}()
 
 	fired := make(chan struct{}, 1)
 	runner := &fireOnceRunner{fired: fired}
@@ -126,13 +128,14 @@ func (r *fireOnceRunner) Run(ctx context.Context, opts SyncOptions) (*SyncResult
 // external test package), which also ensures the error branch is counted
 // against the package's own coverage profile.
 func TestSchedulerAlertOnFailure(t *testing.T) {
-	defer goleak.VerifyNone(t,
-		// Task 7 (WatchSIGHUP stoppable) will fix this: orchestrator tests
-		// earlier in this package binary spawn an un-stoppable SIGHUP watcher
-		// goroutine that survives into our scheduler tests. Ignoring it here
-		// keeps this task focused on scheduler context propagation.
-		goleak.IgnoreTopFunction("github.com/milos85vasic/My-Patreon-Manager/internal/services/filter.(*Repoignore).WatchSIGHUP.func1"),
-	)
+	defer func() {
+		// Earlier orchestrator tests in this package may have started the
+		// package-level repoignore SIGHUP watcher via loadRepoignore. Stop
+		// it deterministically before the leak check so we don't need any
+		// IgnoreTopFunction escape hatches.
+		StopRepoignoreWatch()
+		goleak.VerifyNone(t)
+	}()
 
 	alertCalled := make(chan struct{}, 1)
 	alert := &recordingAlert{ch: alertCalled}

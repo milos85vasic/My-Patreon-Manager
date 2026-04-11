@@ -176,16 +176,31 @@ func (r *Repoignore) Reload() error {
 	return nil
 }
 
-func (r *Repoignore) WatchSIGHUP() {
+// WatchSIGHUP starts a goroutine that reloads the repoignore config whenever
+// SIGHUP is received. It returns a done channel that closes after the watcher
+// goroutine exits. Callers must close `stop` (or a nil stop will make the
+// watcher run until the signal channel is closed elsewhere) to shut the
+// watcher down deterministically. Passing a nil stop channel is treated as a
+// never-stops watcher, which is only acceptable for ad-hoc tests.
+func (r *Repoignore) WatchSIGHUP(stop <-chan struct{}) <-chan struct{} {
+	done := make(chan struct{})
 	ch := make(chan os.Signal, 1)
 	SignalNotify(ch, syscall.SIGHUP)
 	go func() {
-		for range ch {
-			if err := r.Reload(); err != nil {
-				slog.Error("repoignore reload failed", "error", err)
+		defer close(done)
+		defer signal.Stop(ch)
+		for {
+			select {
+			case <-stop:
+				return
+			case <-ch:
+				if err := r.Reload(); err != nil {
+					slog.Error("repoignore reload failed", "error", err)
+				}
 			}
 		}
 	}()
+	return done
 }
 
 func ValidatePatterns(patterns []Pattern) []string {

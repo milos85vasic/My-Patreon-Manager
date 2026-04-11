@@ -266,9 +266,12 @@ func TestRepoignore_WatchSIGHUP(t *testing.T) {
 	r, err := filter.ParseRepoignoreFile(path)
 	require.NoError(t, err)
 
-	// Call WatchSIGHUP - should not panic
-	r.WatchSIGHUP()
-	// No easy way to test signal handling; just ensure function returns
+	// Call WatchSIGHUP - should not panic. Close stop immediately so the
+	// watcher goroutine exits and doesn't leak into sibling tests.
+	stop := make(chan struct{})
+	done := r.WatchSIGHUP(stop)
+	close(stop)
+	<-done
 }
 
 func TestRepoignore_Match_WildcardEdgeCases(t *testing.T) {
@@ -433,7 +436,8 @@ func TestRepoignore_WatchSIGHUP_Signal(t *testing.T) {
 		// We'll not call real signal.Notify
 	}
 
-	r.WatchSIGHUP()
+	stop := make(chan struct{})
+	done := r.WatchSIGHUP(stop)
 	// Wait a bit for goroutine to start
 	time.Sleep(10 * time.Millisecond)
 	// SignalChan should be set
@@ -453,7 +457,9 @@ func TestRepoignore_WatchSIGHUP_Signal(t *testing.T) {
 	}
 	assert.True(t, r.Match("https://github.com/owner/other"))
 	assert.False(t, r.Match("https://github.com/owner/repo"))
-	// Channel will be garbage collected; goroutine may leak but acceptable for unit test
+	// Stop watcher deterministically to avoid goroutine leaks.
+	close(stop)
+	<-done
 }
 
 func TestRepoignore_WatchSIGHUP_ReloadError(t *testing.T) {
@@ -478,7 +484,8 @@ func TestRepoignore_WatchSIGHUP_ReloadError(t *testing.T) {
 		// We'll not call real signal.Notify
 	}
 
-	r.WatchSIGHUP()
+	stop := make(chan struct{})
+	done := r.WatchSIGHUP(stop)
 	// Wait a bit for goroutine to start
 	time.Sleep(10 * time.Millisecond)
 	require.NotNil(t, signalChan, "SignalNotify should have been called")
@@ -492,6 +499,8 @@ func TestRepoignore_WatchSIGHUP_ReloadError(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 	// No panic expected; we can't easily verify the log, but the line will be executed.
 	// Restore permissions so file can be cleaned up (defer above).
+	close(stop)
+	<-done
 }
 
 func TestParseRepoignoreFile_FilterValidPatterns_EdgeCases(t *testing.T) {

@@ -23,19 +23,44 @@ import (
 )
 
 var (
+	repoignoreMu   sync.Mutex
 	repoignoreOnce sync.Once
 	repoignore     *filter.Repoignore
 	repoignoreErr  error
+	repoignoreStop chan struct{}
+	repoignoreDone <-chan struct{}
 )
 
 func loadRepoignore() (*filter.Repoignore, error) {
 	repoignoreOnce.Do(func() {
 		repoignore, repoignoreErr = filter.ParseRepoignoreFile("./.repoignore")
 		if repoignoreErr == nil && repoignore != nil {
-			repoignore.WatchSIGHUP()
+			repoignoreMu.Lock()
+			repoignoreStop = make(chan struct{})
+			repoignoreDone = repoignore.WatchSIGHUP(repoignoreStop)
+			repoignoreMu.Unlock()
 		}
 	})
 	return repoignore, repoignoreErr
+}
+
+// StopRepoignoreWatch shuts down the package-level SIGHUP watcher started by
+// loadRepoignore, if any. It is safe to call multiple times and from tests
+// that need deterministic goroutine cleanup. It blocks until the watcher
+// goroutine has exited.
+func StopRepoignoreWatch() {
+	repoignoreMu.Lock()
+	stop := repoignoreStop
+	done := repoignoreDone
+	repoignoreStop = nil
+	repoignoreDone = nil
+	repoignoreMu.Unlock()
+	if stop != nil {
+		close(stop)
+	}
+	if done != nil {
+		<-done
+	}
 }
 
 type SyncFilter struct {
