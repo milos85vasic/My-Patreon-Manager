@@ -44,6 +44,22 @@ type Config struct {
 	// database connection). Wired into cmd/cli and cmd/server in Phase 2
 	// Task 2.
 	AuditStore string
+	// AdminKey is the shared-secret bearer value expected in the
+	// X-Admin-Key header for requests hitting /admin and /debug/pprof.
+	// Empty disables the check at startup time (the Auth middleware then
+	// falls back to the ADMIN_KEY environment variable).
+	AdminKey string
+	// WebhookHMACSecret is the shared secret used to validate incoming
+	// webhook signatures. The exact validation scheme is provider-specific
+	// (GitHub uses sha256 HMAC; others use a bearer token).
+	WebhookHMACSecret string
+	// RateLimitRPS is the sustained per-IP request rate (requests/sec)
+	// enforced by the IPRateLimiter middleware on webhook/admin/download
+	// routes. Defaults to 100.
+	RateLimitRPS float64
+	// RateLimitBurst is the burst budget the IPRateLimiter allows a single
+	// IP before throttling kicks in. Defaults to 200.
+	RateLimitBurst int
 }
 
 func NewConfig() *Config {
@@ -64,6 +80,8 @@ func NewConfig() *Config {
 		ContentTierMappingStrategy: "linear",
 		GracePeriodHours:           24,
 		AuditStore:                 "ring",
+		RateLimitRPS:               100,
+		RateLimitBurst:             200,
 	}
 }
 
@@ -169,4 +187,8 @@ func (c *Config) LoadFromEnv() {
 	c.ContentTierMappingStrategy = getEnv("CONTENT_TIER_MAPPING_STRATEGY", c.ContentTierMappingStrategy)
 	c.GracePeriodHours = getEnvInt("GRACE_PERIOD_HOURS", c.GracePeriodHours)
 	c.AuditStore = getEnv("AUDIT_STORE", c.AuditStore)
+	c.AdminKey = getEnv("ADMIN_KEY", c.AdminKey)
+	c.WebhookHMACSecret = getEnv("WEBHOOK_HMAC_SECRET", c.WebhookHMACSecret)
+	c.RateLimitRPS = getEnvFloat("RATE_LIMIT_RPS", c.RateLimitRPS)
+	c.RateLimitBurst = getEnvInt("RATE_LIMIT_BURST", c.RateLimitBurst)
 }

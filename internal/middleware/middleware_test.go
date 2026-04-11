@@ -97,6 +97,68 @@ func TestAuth_AdminKeyFromEnv(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, w.Code)
 }
 
+func TestRequireAdminKey(t *testing.T) {
+	t.Run("explicit key happy path", func(t *testing.T) {
+		engine := gin.New()
+		engine.Use(RequireAdminKey("secret-admin-key"))
+		engine.GET("/pprof", func(c *gin.Context) {
+			c.String(http.StatusOK, "pprof")
+		})
+
+		// Missing key -> 401
+		req := httptest.NewRequest("GET", "/pprof", nil)
+		w := httptest.NewRecorder()
+		engine.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+		// Wrong key -> 403
+		req = httptest.NewRequest("GET", "/pprof", nil)
+		req.Header.Set("X-Admin-Key", "wrong")
+		w = httptest.NewRecorder()
+		engine.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusForbidden, w.Code)
+
+		// Correct key -> 200
+		req = httptest.NewRequest("GET", "/pprof", nil)
+		req.Header.Set("X-Admin-Key", "secret-admin-key")
+		w = httptest.NewRecorder()
+		engine.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("env fallback", func(t *testing.T) {
+		os.Setenv("ADMIN_KEY", "env-admin-key")
+		defer os.Unsetenv("ADMIN_KEY")
+
+		engine := gin.New()
+		engine.Use(RequireAdminKey(""))
+		engine.GET("/pprof", func(c *gin.Context) {
+			c.String(http.StatusOK, "pprof")
+		})
+
+		req := httptest.NewRequest("GET", "/pprof", nil)
+		req.Header.Set("X-Admin-Key", "env-admin-key")
+		w := httptest.NewRecorder()
+		engine.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("unconfigured fails closed", func(t *testing.T) {
+		os.Unsetenv("ADMIN_KEY")
+		engine := gin.New()
+		engine.Use(RequireAdminKey(""))
+		engine.GET("/pprof", func(c *gin.Context) {
+			c.String(http.StatusOK, "pprof")
+		})
+
+		req := httptest.NewRequest("GET", "/pprof", nil)
+		req.Header.Set("X-Admin-Key", "anything")
+		w := httptest.NewRecorder()
+		engine.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+}
+
 func TestRateLimit(t *testing.T) {
 	// Create a rate limiter with 1 request per second, burst 1
 	engine := gin.New()

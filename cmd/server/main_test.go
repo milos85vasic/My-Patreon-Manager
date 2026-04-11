@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -14,12 +16,23 @@ import (
 	"github.com/milos85vasic/My-Patreon-Manager/internal/config"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/handlers"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/metrics"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/middleware"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/models"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/services/audit"
 	syncsvc "github.com/milos85vasic/My-Patreon-Manager/internal/services/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"log/slog"
 )
+
+// failingAuditStore lets tests exercise the adminAuditList error branch by
+// returning a sentinel error from List. Write/Close are no-ops.
+type failingAuditStore struct{}
+
+func (failingAuditStore) Write(context.Context, audit.Entry) error { return nil }
+func (failingAuditStore) List(context.Context, int) ([]audit.Entry, error) {
+	return nil, errors.New("audit list boom")
+}
+func (failingAuditStore) Close() error { return nil }
 
 type mockMetricsCollector struct{}
 
@@ -49,26 +62,27 @@ func (m *mockExit) exit(code int) {
 
 func TestSetupRouter(t *testing.T) {
 	cfg := &config.Config{
-		GinMode: "test",
-		Port:    8080,
+		GinMode:           "test",
+		Port:              8080,
+		AdminKey:          "admin-secret",
+		WebhookHMACSecret: "webhook-secret",
+		RateLimitRPS:      1000,
+		RateLimitBurst:    2000,
 	}
-	router, dedup, wh := setupRouter(cfg, &mockMetricsCollector{})
+	router, dedup, wh, limiter := setupRouter(cfg, &mockMetricsCollector{}, noopOrchestrator{}, slog.Default())
 	defer dedup.Close()
 	_ = wh // ensure returned handler is non-nil in tests
+	assert.NotNil(t, limiter)
 
-	tests := []struct {
+	// Public routes: health & metrics.
+	for _, tt := range []struct {
 		method string
 		path   string
 		status int
 	}{
 		{"GET", "/health", http.StatusOK},
 		{"GET", "/metrics", http.StatusOK},
-		{"POST", "/webhook/github", http.StatusOK},
-		{"POST", "/webhook/gitlab", http.StatusOK},
-		{"POST", "/webhook/unknown", http.StatusOK},
-	}
-
-	for _, tt := range tests {
+	} {
 		t.Run(tt.method+tt.path, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			req, _ := http.NewRequest(tt.method, tt.path, nil)
@@ -76,6 +90,116 @@ func TestSetupRouter(t *testing.T) {
 			assert.Equal(t, tt.status, w.Code)
 		})
 	}
+
+	// Webhook route without signature -> 401 from WebhookAuth.
+	t.Run("webhook requires signature", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/webhook/github", bytes.NewReader([]byte("{}")))
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	// Admin route without X-Admin-Key -> 401 from Auth.
+	t.Run("admin requires admin key", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/admin/reload", nil)
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	// Admin route with correct key -> 200.
+	t.Run("admin reload with key", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/admin/reload", nil)
+		req.Header.Set("X-Admin-Key", "admin-secret")
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	// Admin audit endpoint returns entries from the admin handler's store.
+	t.Run("admin audit list", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/admin/audit", nil)
+		req.Header.Set("X-Admin-Key", "admin-secret")
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "entries")
+	})
+
+	// Admin sync-status endpoint.
+	t.Run("admin sync-status", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/admin/sync-status", nil)
+		req.Header.Set("X-Admin-Key", "admin-secret")
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	// Admin deep health endpoint.
+	t.Run("admin deep health", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/admin/health/deep", nil)
+		req.Header.Set("X-Admin-Key", "admin-secret")
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	// Download without a signed token -> 400 (handler rejects missing params).
+	t.Run("download missing token", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/download/abc", nil)
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	// pprof index requires admin auth.
+	t.Run("pprof requires admin", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/debug/pprof/", nil)
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("pprof with admin key", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/debug/pprof/", nil)
+		req.Header.Set("X-Admin-Key", "admin-secret")
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+}
+
+// TestSetupRouter_DefaultsClampNonPositive exercises the default-limit
+// branches inside setupRouter when the caller supplies zero/negative rate
+// limit values — setupRouter should still return a usable router.
+func TestSetupRouter_DefaultsClampNonPositive(t *testing.T) {
+	cfg := &config.Config{
+		GinMode:        "test",
+		Port:           8080,
+		RateLimitRPS:   0,
+		RateLimitBurst: 0,
+	}
+	router, dedup, _, limiter := setupRouter(cfg, &mockMetricsCollector{}, nil, nil)
+	defer dedup.Close()
+	assert.NotNil(t, router)
+	assert.NotNil(t, limiter)
+}
+
+// TestAdminAuditList_Error covers the error branch inside adminAuditList
+// by swapping the AdminHandler's audit store for one that fails on List.
+func TestAdminAuditList_Error(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := handlers.NewAdminHandler(slog.Default())
+	h.SetAuditStore(failingAuditStore{})
+
+	r := gin.New()
+	r.GET("/admin/audit", adminAuditList(h))
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/admin/audit", nil)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	assert.Contains(t, w.Body.String(), "audit list boom")
 }
 
 func TestRunServer_StartsAndStops(t *testing.T) {
@@ -168,18 +292,55 @@ func TestRunServer_WithRealRequest(t *testing.T) {
 	}
 }
 
-func TestWebhookDrainFn_LogsRepos(t *testing.T) {
+// captureOrchestrator records EnqueueRepo calls so tests can assert the
+// webhook drain forwards events to orchestrator.EnqueueRepo and surfaces
+// errors.
+type captureOrchestrator struct {
+	calls []models.Repository
+	err   error
+}
+
+func (c *captureOrchestrator) EnqueueRepo(_ context.Context, repo models.Repository) error {
+	c.calls = append(c.calls, repo)
+	return c.err
+}
+
+func TestWebhookDrainFn_ForwardsToOrchestrator(t *testing.T) {
 	var buf bytes.Buffer
 	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	fn := webhookDrainFn(logger)
+	orch := &captureOrchestrator{}
+
+	fn := webhookDrainFn(logger, orch)
 	err := fn(models.Repository{ID: "owner/repo", Service: "github"})
 	assert.NoError(t, err)
 	assert.Contains(t, buf.String(), "webhook drain")
 	assert.Contains(t, buf.String(), "owner/repo")
+	assert.Len(t, orch.calls, 1)
+	assert.Equal(t, "owner/repo", orch.calls[0].ID)
 
 	// nil logger branch
-	fnNil := webhookDrainFn(nil)
+	fnNil := webhookDrainFn(nil, orch)
 	assert.NoError(t, fnNil(models.Repository{ID: "x"}))
+	assert.Len(t, orch.calls, 2)
+
+	// nil orchestrator is tolerated (no-op).
+	fnNilOrch := webhookDrainFn(logger, nil)
+	assert.NoError(t, fnNilOrch(models.Repository{ID: "y"}))
+}
+
+func TestWebhookDrainFn_SurfacesOrchestratorError(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	orch := &captureOrchestrator{err: fmt.Errorf("boom")}
+
+	fn := webhookDrainFn(logger, orch)
+	err := fn(models.Repository{ID: "owner/repo", Service: "github"})
+	assert.Error(t, err)
+	assert.Contains(t, buf.String(), "orchestrator enqueue failed")
+
+	// nil logger branch with error
+	fnNil := webhookDrainFn(nil, orch)
+	assert.Error(t, fnNil(models.Repository{ID: "z"}))
 }
 
 func TestRunServer_DrainsQueuedWebhooks(t *testing.T) {
@@ -193,12 +354,12 @@ func TestRunServer_DrainsQueuedWebhooks(t *testing.T) {
 	defer func() { setupRouterFn = originalSetupRouterFn }()
 
 	var captured *handlers.WebhookHandler
-	setupRouterFn = func(cfg *config.Config, mc metrics.MetricsCollector) (*gin.Engine, *syncsvc.EventDeduplicator, *handlers.WebhookHandler) {
-		r, dedup, wh := setupRouter(cfg, mc)
+	setupRouterFn = func(cfg *config.Config, mc metrics.MetricsCollector, orch Orchestrator, logger *slog.Logger) (*gin.Engine, *syncsvc.EventDeduplicator, *handlers.WebhookHandler, *middleware.IPRateLimiter) {
+		r, dedup, wh, lim := setupRouter(cfg, mc, orch, logger)
 		// preload queue so drain loop has work to do
 		require.True(t, wh.Queue.TryEnqueue(models.Repository{ID: "preloaded", Service: "github"}))
 		captured = wh
-		return r, dedup, wh
+		return r, dedup, wh, lim
 	}
 
 	cfg := &config.Config{GinMode: "test", Port: 0}
@@ -223,7 +384,7 @@ func TestRunServer_DrainLogsNonCancelError(t *testing.T) {
 	// rather than exiting on context cancel. This exercises the "drain
 	// stopped" error-logging branch inside runServer.
 	originalDrain := webhookDrainFn
-	webhookDrainFn = func(_ *slog.Logger) func(models.Repository) error {
+	webhookDrainFn = func(_ *slog.Logger, _ Orchestrator) func(models.Repository) error {
 		return func(models.Repository) error {
 			return fmt.Errorf("drain sentinel boom")
 		}
@@ -232,10 +393,10 @@ func TestRunServer_DrainLogsNonCancelError(t *testing.T) {
 
 	originalSetupRouterFn := setupRouterFn
 	defer func() { setupRouterFn = originalSetupRouterFn }()
-	setupRouterFn = func(cfg *config.Config, mc metrics.MetricsCollector) (*gin.Engine, *syncsvc.EventDeduplicator, *handlers.WebhookHandler) {
-		r, dedup, wh := setupRouter(cfg, mc)
+	setupRouterFn = func(cfg *config.Config, mc metrics.MetricsCollector, orch Orchestrator, logger *slog.Logger) (*gin.Engine, *syncsvc.EventDeduplicator, *handlers.WebhookHandler, *middleware.IPRateLimiter) {
+		r, dedup, wh, lim := setupRouter(cfg, mc, orch, logger)
 		require.True(t, wh.Queue.TryEnqueue(models.Repository{ID: "trigger"}))
-		return r, dedup, wh
+		return r, dedup, wh, lim
 	}
 
 	cfg := &config.Config{GinMode: "test", Port: 0}
@@ -337,9 +498,9 @@ func TestMain_Success(t *testing.T) {
 
 	// Mock metrics collector
 	newMetricsCollector = func() metrics.MetricsCollector { return &mockMetricsCollector{} }
-	setupRouterFn = func(*config.Config, metrics.MetricsCollector) (*gin.Engine, *syncsvc.EventDeduplicator, *handlers.WebhookHandler) {
+	setupRouterFn = func(*config.Config, metrics.MetricsCollector, Orchestrator, *slog.Logger) (*gin.Engine, *syncsvc.EventDeduplicator, *handlers.WebhookHandler, *middleware.IPRateLimiter) {
 		dedup := syncsvc.NewEventDeduplicator(time.Minute)
-		return gin.New(), dedup, handlers.NewWebhookHandler(dedup, &mockMetricsCollector{}, nil)
+		return gin.New(), dedup, handlers.NewWebhookHandler(dedup, &mockMetricsCollector{}, nil), middleware.NewIPRateLimiter(100, 200, 10*time.Minute)
 	}
 
 	// Mock runServer to return nil (success) and cancel context to exit
@@ -416,9 +577,9 @@ func TestMain_Error(t *testing.T) {
 
 	// Mock metrics collector
 	newMetricsCollector = func() metrics.MetricsCollector { return &mockMetricsCollector{} }
-	setupRouterFn = func(*config.Config, metrics.MetricsCollector) (*gin.Engine, *syncsvc.EventDeduplicator, *handlers.WebhookHandler) {
+	setupRouterFn = func(*config.Config, metrics.MetricsCollector, Orchestrator, *slog.Logger) (*gin.Engine, *syncsvc.EventDeduplicator, *handlers.WebhookHandler, *middleware.IPRateLimiter) {
 		dedup := syncsvc.NewEventDeduplicator(time.Minute)
-		return gin.New(), dedup, handlers.NewWebhookHandler(dedup, &mockMetricsCollector{}, nil)
+		return gin.New(), dedup, handlers.NewWebhookHandler(dedup, &mockMetricsCollector{}, nil), middleware.NewIPRateLimiter(100, 200, 10*time.Minute)
 	}
 
 	// Mock runServer to return an error, which should cause osExit(1)

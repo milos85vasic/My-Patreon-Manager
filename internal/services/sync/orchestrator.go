@@ -86,6 +86,13 @@ type SyncResult struct {
 	DryRun    *DryRunReport
 }
 
+// DefaultEnqueueBufferCapacity is the default buffer used for the
+// orchestrator's repo work queue when the caller does not override it. It is
+// deliberately generous so webhook bursts do not immediately surface 429s to
+// upstream providers — Phase 1 Task 4's WebhookQueue is already bounded and
+// will apply backpressure before this one fills.
+const DefaultEnqueueBufferCapacity = 1024
+
 type Orchestrator struct {
 	db         database.Database
 	providers  []git.RepositoryProvider
@@ -103,6 +110,13 @@ type Orchestrator struct {
 	// path (sync run, per-repo processing, publish) emits exactly one
 	// audit.Entry — see Phase 2 Task 2.
 	audit audit.Store
+	// workCh is the orchestrator's internal bounded repo work queue used
+	// by the webhook drain path. Sends go through EnqueueRepo; the consumer
+	// is expected to be supervised externally (e.g. by cmd/server's
+	// Lifecycle). The buffer is created lazily on first access so tests
+	// that never touch the queue don't pay the allocation.
+	workMu sync.Mutex
+	workCh chan models.Repository
 }
 
 func NewOrchestrator(
@@ -154,6 +168,64 @@ func (o *Orchestrator) emitAudit(ctx context.Context, e audit.Entry) {
 		e.CreatedAt = time.Now()
 	}
 	_ = o.audit.Write(ctx, e)
+}
+
+// ensureWorkCh lazily initializes the orchestrator's bounded work queue
+// backing EnqueueRepo / DrainRepoWork. Guarded by workMu so concurrent
+// webhook drains all see the same channel.
+func (o *Orchestrator) ensureWorkCh() chan models.Repository {
+	o.workMu.Lock()
+	defer o.workMu.Unlock()
+	if o.workCh == nil {
+		o.workCh = make(chan models.Repository, DefaultEnqueueBufferCapacity)
+	}
+	return o.workCh
+}
+
+// EnqueueRepo appends repo to the orchestrator's internal work queue
+// non-blockingly. It returns ErrWorkQueueFull when the queue is saturated so
+// callers (notably the webhook drain goroutine) can surface backpressure. It
+// also emits a sync.enqueue audit entry so the event is observable in the
+// same pipeline used by Run/ScanOnly.
+func (o *Orchestrator) EnqueueRepo(ctx context.Context, repo models.Repository) error {
+	ch := o.ensureWorkCh()
+	select {
+	case ch <- repo:
+		o.emitAudit(ctx, audit.Entry{
+			Actor:    "webhook",
+			Action:   "sync.enqueue",
+			Target:   repo.ID,
+			Outcome:  "ok",
+			Metadata: map[string]string{"service": repo.Service},
+		})
+		return nil
+	default:
+		o.emitAudit(ctx, audit.Entry{
+			Actor:    "webhook",
+			Action:   "sync.enqueue",
+			Target:   repo.ID,
+			Outcome:  "full",
+			Metadata: map[string]string{"service": repo.Service},
+		})
+		return ErrWorkQueueFull
+	}
+}
+
+// DrainRepoWork consumes repos from the internal work queue until ctx is
+// cancelled, invoking fn per item. Returns ctx.Err() on shutdown or the first
+// non-nil error from fn. Safe for a Lifecycle-supervised goroutine.
+func (o *Orchestrator) DrainRepoWork(ctx context.Context, fn func(context.Context, models.Repository) error) error {
+	ch := o.ensureWorkCh()
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case repo := <-ch:
+			if err := fn(ctx, repo); err != nil {
+				return err
+			}
+		}
+	}
 }
 
 // discoverRepositories walks every configured git provider, applies

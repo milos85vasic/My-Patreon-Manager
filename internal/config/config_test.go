@@ -27,6 +27,10 @@ func TestNewConfigDefaults(t *testing.T) {
 	assert.Equal(t, "linear", cfg.ContentTierMappingStrategy)
 	assert.Equal(t, 24, cfg.GracePeriodHours)
 	assert.Equal(t, "ring", cfg.AuditStore)
+	assert.Equal(t, float64(100), cfg.RateLimitRPS)
+	assert.Equal(t, 200, cfg.RateLimitBurst)
+	assert.Empty(t, cfg.AdminKey)
+	assert.Empty(t, cfg.WebhookHMACSecret)
 
 	// Zero values for fields without defaults
 	assert.Empty(t, cfg.PatreonClientID)
@@ -82,6 +86,10 @@ func TestLoadFromEnv(t *testing.T) {
 	t.Setenv("CONTENT_TIER_MAPPING_STRATEGY", "exponential")
 	t.Setenv("GRACE_PERIOD_HOURS", "48")
 	t.Setenv("AUDIT_STORE", "sqlite")
+	t.Setenv("ADMIN_KEY", "test-admin")
+	t.Setenv("WEBHOOK_HMAC_SECRET", "test-webhook-secret")
+	t.Setenv("RATE_LIMIT_RPS", "250")
+	t.Setenv("RATE_LIMIT_BURST", "500")
 
 	cfg := NewConfig()
 	cfg.LoadFromEnv()
@@ -119,6 +127,10 @@ func TestLoadFromEnv(t *testing.T) {
 	assert.Equal(t, "exponential", cfg.ContentTierMappingStrategy)
 	assert.Equal(t, 48, cfg.GracePeriodHours)
 	assert.Equal(t, "sqlite", cfg.AuditStore)
+	assert.Equal(t, "test-admin", cfg.AdminKey)
+	assert.Equal(t, "test-webhook-secret", cfg.WebhookHMACSecret)
+	assert.Equal(t, float64(250), cfg.RateLimitRPS)
+	assert.Equal(t, 500, cfg.RateLimitBurst)
 }
 
 func TestLoadFromEnv_DefaultValues(t *testing.T) {
@@ -142,6 +154,8 @@ func TestLoadFromEnv_DefaultValues(t *testing.T) {
 	assert.Equal(t, "linear", cfg.ContentTierMappingStrategy)
 	assert.Equal(t, 24, cfg.GracePeriodHours)
 	assert.Equal(t, "ring", cfg.AuditStore)
+	assert.Equal(t, float64(100), cfg.RateLimitRPS)
+	assert.Equal(t, 200, cfg.RateLimitBurst)
 }
 
 func TestValidate(t *testing.T) {
