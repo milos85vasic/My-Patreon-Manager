@@ -38,6 +38,12 @@ Early scaffolding. The `internal/` packages exist but are **not wired into `main
 
 Copy `.env.example` to `.env` and fill in Patreon API credentials. Required for any Patreon API interaction.
 
+## Security
+
+**CRITICAL**: No token, API key, password, or secret of any kind may ever be committed to version control. This includes test files, documentation, configuration examples, or any tracked file. All such values must be redacted or replaced with placeholders (e.g., `***`, `your_client_id_here`). Use `.env.example` for placeholder examples; real credentials must be stored only in `.env` (gitignored) or environment variables.
+
+Any accidental exposure must be treated as a security incident: rotate credentials immediately, use `git-filter-repo` to purge from history, and force-push to all remotes.
+
 ## Mirrors
 
 The repo mirrors to four Git hosting services. Push scripts live in `Upstreams/` (`GitHub.sh`, `GitLab.sh`, `GitFlic.sh`, `GitVerse.sh`) — each sets `UPSTREAMABLE_REPOSITORY` and is meant to be sourced by a push tool.

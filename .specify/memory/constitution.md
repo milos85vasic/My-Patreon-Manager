@@ -154,6 +154,7 @@ All API credentials MUST be loaded from `.env` files or environment variables
 following twelve-factor methodology. Credentials MUST NEVER appear in logs,
 version control, or error messages.
 
+- **No token, API key, password, or secret of any kind may ever be committed to version control.** This includes test files, documentation, configuration examples, or any tracked file. All such values MUST be redacted or replaced with placeholders (e.g., `***`, `your_client_id_here`).
 - Patreon OAuth2 tokens MUST implement automatic refresh with in-memory
   update and optional `.env` persistence.
 - Git service tokens support primary/secondary pairs with automatic failover

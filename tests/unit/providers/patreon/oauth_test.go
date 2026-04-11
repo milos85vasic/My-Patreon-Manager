@@ -1,6 +1,5 @@
-//go:build disabled
 
-//go:build disabled\n
+
 package patreon_test
 
 import (
