@@ -13,6 +13,7 @@ import (
 	"github.com/milos85vasic/My-Patreon-Manager/internal/config"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/database"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/metrics"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/models"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/git"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/llm"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/patreon"
@@ -34,6 +35,9 @@ var newOrchestrator orchestratorFactory = func(db database.Database, providers [
 
 type orchestrator interface {
 	Run(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error)
+	ScanOnly(ctx context.Context, opts syncsvc.SyncOptions) ([]models.Repository, error)
+	GenerateOnly(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error)
+	PublishOnly(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error)
 }
 
 func main() {
@@ -61,7 +65,12 @@ func main() {
 	args := flag.Args()
 	if len(args) == 0 {
 		fmt.Println("Usage: patreon-manager <command> [options]")
-		fmt.Println("Commands: sync, scan, generate, validate, publish")
+		fmt.Println("Commands:")
+		fmt.Println("  sync      — discover repos, generate content, publish to Patreon (all-in-one)")
+		fmt.Println("  scan      — discover repositories only; no LLM calls, no Patreon publish")
+		fmt.Println("  generate  — run content pipeline, persist GeneratedContent; no Patreon publish")
+		fmt.Println("  publish   — publish existing generated content to Patreon with tier gating")
+		fmt.Println("  validate  — validate configuration and environment")
 		osExit(1)
 	}
 
@@ -134,11 +143,11 @@ func main() {
 			runSync(ctx, orchestrator, syncOpts, logger)
 		}
 	case "scan":
-		runSync(ctx, orchestrator, syncOpts, logger)
+		runScan(ctx, orchestrator, syncOpts, logger)
 	case "generate":
-		runSync(ctx, orchestrator, syncOpts, logger)
+		runGenerate(ctx, orchestrator, syncOpts, logger)
 	case "publish":
-		runSync(ctx, orchestrator, syncOpts, logger)
+		runPublish(ctx, orchestrator, syncOpts, logger)
 	default:
 		fmt.Printf("Unknown command: %s\n", args[0])
 		osExit(1)

@@ -15,6 +15,7 @@ import (
 	"github.com/milos85vasic/My-Patreon-Manager/internal/config"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/database"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/metrics"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/models"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/git"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/patreon"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/services/content"
@@ -93,11 +94,38 @@ func TestSetupProviders_Multiple(t *testing.T) {
 
 // mock orchestrator
 type mockOrchestrator struct {
-	runFunc func(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error)
+	runFunc      func(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error)
+	scanFunc     func(ctx context.Context, opts syncsvc.SyncOptions) ([]models.Repository, error)
+	generateFunc func(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error)
+	publishFunc  func(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error)
 }
 
 func (m *mockOrchestrator) Run(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error) {
-	return m.runFunc(ctx, opts)
+	if m.runFunc != nil {
+		return m.runFunc(ctx, opts)
+	}
+	return &syncsvc.SyncResult{}, nil
+}
+
+func (m *mockOrchestrator) ScanOnly(ctx context.Context, opts syncsvc.SyncOptions) ([]models.Repository, error) {
+	if m.scanFunc != nil {
+		return m.scanFunc(ctx, opts)
+	}
+	return nil, nil
+}
+
+func (m *mockOrchestrator) GenerateOnly(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error) {
+	if m.generateFunc != nil {
+		return m.generateFunc(ctx, opts)
+	}
+	return &syncsvc.SyncResult{}, nil
+}
+
+func (m *mockOrchestrator) PublishOnly(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error) {
+	if m.publishFunc != nil {
+		return m.publishFunc(ctx, opts)
+	}
+	return &syncsvc.SyncResult{}, nil
 }
 
 // mock metrics collector
@@ -601,7 +629,7 @@ func TestMain_GenerateCommand(t *testing.T) {
 	defer func() { newOrchestrator = oldNewOrchestrator }()
 	newOrchestrator = func(db database.Database, providers []git.RepositoryProvider, patreonClient patreon.Provider, generator *content.Generator, m metrics.MetricsCollector, logger *slog.Logger, tierMapper *content.TierMapper) orchestrator {
 		return &mockOrchestrator{
-			runFunc: func(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error) {
+			generateFunc: func(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error) {
 				orchestratorCalled = true
 				orchestratorOpts = opts
 				return &syncsvc.SyncResult{Processed: 1, Failed: 0, Skipped: 0}, nil
@@ -659,10 +687,10 @@ func TestMain_ScanCommand(t *testing.T) {
 	defer func() { newOrchestrator = oldNewOrchestrator }()
 	newOrchestrator = func(db database.Database, providers []git.RepositoryProvider, patreonClient patreon.Provider, generator *content.Generator, m metrics.MetricsCollector, logger *slog.Logger, tierMapper *content.TierMapper) orchestrator {
 		return &mockOrchestrator{
-			runFunc: func(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error) {
+			scanFunc: func(ctx context.Context, opts syncsvc.SyncOptions) ([]models.Repository, error) {
 				orchestratorCalled = true
 				orchestratorOpts = opts
-				return &syncsvc.SyncResult{Processed: 1, Failed: 0, Skipped: 0}, nil
+				return []models.Repository{{ID: "r1", Service: "github", Owner: "o", Name: "n", URL: "https://x"}}, nil
 			},
 		}
 	}
@@ -717,7 +745,7 @@ func TestMain_PublishCommand(t *testing.T) {
 	defer func() { newOrchestrator = oldNewOrchestrator }()
 	newOrchestrator = func(db database.Database, providers []git.RepositoryProvider, patreonClient patreon.Provider, generator *content.Generator, m metrics.MetricsCollector, logger *slog.Logger, tierMapper *content.TierMapper) orchestrator {
 		return &mockOrchestrator{
-			runFunc: func(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error) {
+			publishFunc: func(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error) {
 				orchestratorCalled = true
 				orchestratorOpts = opts
 				return &syncsvc.SyncResult{Processed: 1, Failed: 0, Skipped: 0}, nil

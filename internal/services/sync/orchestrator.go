@@ -156,6 +156,314 @@ func (o *Orchestrator) emitAudit(ctx context.Context, e audit.Entry) {
 	_ = o.audit.Write(ctx, e)
 }
 
+// discoverRepositories walks every configured git provider, applies
+// .repoignore filtering, and returns the resulting repository slice. Errors
+// from individual providers are appended to errsOut (never returned) so the
+// caller can continue with a partial view — matching the contract of Run().
+func (o *Orchestrator) discoverRepositories(ctx context.Context, filter SyncFilter, errsOut *[]string) []models.Repository {
+	var allRepos []models.Repository
+	for _, p := range o.providers {
+		org := filter.Org
+		repos, err := p.ListRepositories(ctx, org, git.ListOptions{PerPage: 100})
+		if err != nil {
+			if errsOut != nil {
+				*errsOut = append(*errsOut, fmt.Sprintf("%s: %v", p.Name(), err))
+			}
+			continue
+		}
+		allRepos = append(allRepos, repos...)
+	}
+
+	ri, err := loadRepoignore()
+	if err != nil {
+		if errsOut != nil {
+			*errsOut = append(*errsOut, fmt.Sprintf("failed to load .repoignore: %v", err))
+		}
+	} else if ri != nil {
+		var filtered []models.Repository
+		for _, r := range allRepos {
+			if !ri.Match(r.URL) {
+				filtered = append(filtered, r)
+			}
+		}
+		if o.logger != nil {
+			o.logger.Info("repoignore filtered", slog.Int("before", len(allRepos)), slog.Int("after", len(filtered)))
+		}
+		allRepos = filtered
+	}
+	return allRepos
+}
+
+// ScanOnly discovers repositories from every configured provider, applies
+// .repoignore filtering, and returns the resulting slice. It never generates
+// content and never publishes to Patreon. One audit entry is emitted at the
+// start of the scan and one per discovered repository (Action: "sync.scan").
+func (o *Orchestrator) ScanOnly(ctx context.Context, opts SyncOptions) ([]models.Repository, error) {
+	o.emitAudit(ctx, audit.Entry{Actor: "orchestrator", Action: "sync.scan.start"})
+
+	if err := o.lock.AcquireLock(ctx); err != nil {
+		return nil, fmt.Errorf("acquire lock: %w", err)
+	}
+	defer o.lock.ReleaseLock(ctx)
+
+	if o.logger != nil {
+		o.logger.Info("scan started")
+	}
+
+	var errs []string
+	repos := o.discoverRepositories(ctx, opts.Filter, &errs)
+	for _, e := range errs {
+		o.emitAudit(ctx, audit.Entry{
+			Actor:    "orchestrator",
+			Action:   "sync.scan",
+			Outcome:  "error",
+			Metadata: map[string]string{"error": e},
+		})
+	}
+
+	for _, r := range repos {
+		o.emitAudit(ctx, audit.Entry{
+			Actor:   "orchestrator",
+			Action:  "sync.scan",
+			Target:  fmt.Sprintf("%s/%s", r.Owner, r.Name),
+			Outcome: "ok",
+		})
+	}
+
+	if o.logger != nil {
+		o.logger.Info("scan completed", slog.Int("count", len(repos)))
+	}
+
+	return repos, nil
+}
+
+// GenerateOnly runs the content-generation pipeline for every discovered
+// repository: scan, then for each repo call the generator (which persists
+// GeneratedContent records to the database). Publication to Patreon is
+// deliberately skipped. Emits one "sync.generate.start" entry and one
+// "sync.generate" entry per repo.
+func (o *Orchestrator) GenerateOnly(ctx context.Context, opts SyncOptions) (*SyncResult, error) {
+	start := time.Now()
+	result := &SyncResult{}
+
+	o.emitAudit(ctx, audit.Entry{Actor: "orchestrator", Action: "sync.generate.start"})
+
+	if o.metrics != nil {
+		o.metrics.SetActiveSyncs(1)
+		defer o.metrics.SetActiveSyncs(0)
+	}
+
+	if err := o.lock.AcquireLock(ctx); err != nil {
+		return nil, fmt.Errorf("acquire lock: %w", err)
+	}
+	defer o.lock.ReleaseLock(ctx)
+	o.mirrorURLs = nil
+
+	if o.logger != nil {
+		o.logger.Info("generate started")
+	}
+
+	allRepos := o.discoverRepositories(ctx, opts.Filter, &result.Errors)
+
+	for _, repo := range allRepos {
+		if err := ctx.Err(); err != nil {
+			break
+		}
+		target := fmt.Sprintf("%s/%s", repo.Owner, repo.Name)
+
+		if o.generator == nil {
+			result.Skipped++
+			o.emitAudit(ctx, audit.Entry{
+				Actor:   "orchestrator",
+				Action:  "sync.generate",
+				Target:  target,
+				Outcome: "skipped",
+			})
+			continue
+		}
+
+		var prov git.RepositoryProvider
+		for _, p := range o.providers {
+			if p.Name() == repo.Service {
+				prov = p
+				break
+			}
+		}
+		if prov == nil {
+			result.Skipped++
+			o.emitAudit(ctx, audit.Entry{
+				Actor:   "orchestrator",
+				Action:  "sync.generate",
+				Target:  target,
+				Outcome: "skipped",
+			})
+			continue
+		}
+
+		enhancedRepo, err := prov.GetRepositoryMetadata(ctx, repo)
+		if err != nil {
+			result.Failed++
+			result.Errors = append(result.Errors, fmt.Sprintf("%s: %v", target, err))
+			o.emitAudit(ctx, audit.Entry{
+				Actor:    "orchestrator",
+				Action:   "sync.generate",
+				Target:   target,
+				Outcome:  "error",
+				Metadata: map[string]string{"error": shortErr(err)},
+			})
+			continue
+		}
+		if enhancedRepo.IsArchived {
+			result.Skipped++
+			o.emitAudit(ctx, audit.Entry{
+				Actor:   "orchestrator",
+				Action:  "sync.generate",
+				Target:  target,
+				Outcome: "skipped",
+			})
+			continue
+		}
+
+		var mirrorURLs []renderer.MirrorURL
+		if o.mirrorURLs != nil {
+			mirrorURLs = o.mirrorURLs[enhancedRepo.ID]
+		}
+		_, err = o.generator.GenerateForRepository(ctx, enhancedRepo, nil, mirrorURLs)
+		if err != nil {
+			result.Failed++
+			result.Errors = append(result.Errors, fmt.Sprintf("%s: %v", target, err))
+			o.emitAudit(ctx, audit.Entry{
+				Actor:    "orchestrator",
+				Action:   "sync.generate",
+				Target:   target,
+				Outcome:  "error",
+				Metadata: map[string]string{"error": shortErr(err)},
+			})
+			continue
+		}
+		result.Processed++
+		o.emitAudit(ctx, audit.Entry{
+			Actor:   "orchestrator",
+			Action:  "sync.generate",
+			Target:  target,
+			Outcome: "ok",
+		})
+	}
+
+	result.Duration = time.Since(start)
+
+	if o.metrics != nil {
+		o.metrics.RecordSyncDuration("all", "generate", result.Duration.Seconds())
+	}
+
+	if o.logger != nil {
+		o.logger.Info("generate completed",
+			slog.Int("processed", result.Processed),
+			slog.Int("failed", result.Failed),
+			slog.Int("skipped", result.Skipped),
+			slog.Duration("duration", result.Duration),
+		)
+	}
+	return result, nil
+}
+
+// PublishOnly reads existing repositories from the database, finds the latest
+// GeneratedContent record for each, and publishes it to Patreon with
+// tier-gating. It performs no LLM calls and no repository discovery. Emits
+// one "sync.publish.start" entry and reuses the existing "sync.publish"
+// action wired by Phase 2 Task 2 for per-post entries.
+func (o *Orchestrator) PublishOnly(ctx context.Context, opts SyncOptions) (*SyncResult, error) {
+	start := time.Now()
+	result := &SyncResult{}
+
+	o.emitAudit(ctx, audit.Entry{Actor: "orchestrator", Action: "sync.publish.start"})
+
+	// Validate preconditions BEFORE acquiring the lock so that misconfigured
+	// callers fail fast without competing with other sync runs.
+	if o.patreon == nil || o.tierMapper == nil {
+		return nil, fmt.Errorf("patreon client or tier mapper not configured")
+	}
+	if o.db == nil {
+		return nil, fmt.Errorf("database not configured")
+	}
+	repoStore := o.db.Repositories()
+	if repoStore == nil {
+		return nil, fmt.Errorf("repository store not configured")
+	}
+	contentStore := o.db.GeneratedContents()
+	if contentStore == nil {
+		return nil, fmt.Errorf("generated content store not configured")
+	}
+
+	if o.metrics != nil {
+		o.metrics.SetActiveSyncs(1)
+		defer o.metrics.SetActiveSyncs(0)
+	}
+
+	if err := o.lock.AcquireLock(ctx); err != nil {
+		return nil, fmt.Errorf("acquire lock: %w", err)
+	}
+	defer o.lock.ReleaseLock(ctx)
+
+	if o.logger != nil {
+		o.logger.Info("publish started")
+	}
+
+	repos, err := repoStore.List(ctx, database.RepositoryFilter{})
+	if err != nil {
+		return nil, fmt.Errorf("list repositories: %w", err)
+	}
+
+	for _, repo := range repos {
+		if err := ctx.Err(); err != nil {
+			break
+		}
+		if repo == nil {
+			continue
+		}
+		target := fmt.Sprintf("%s/%s", repo.Owner, repo.Name)
+
+		if repo.IsArchived {
+			result.Skipped++
+			continue
+		}
+
+		generated, err := contentStore.GetLatestByRepo(ctx, repo.ID)
+		if err != nil || generated == nil {
+			result.Skipped++
+			continue
+		}
+		if !generated.PassedQualityGate {
+			result.Skipped++
+			continue
+		}
+
+		if err := o.createOrUpdatePost(ctx, *repo, generated); err != nil {
+			result.Failed++
+			result.Errors = append(result.Errors, fmt.Sprintf("%s: %v", target, err))
+			continue
+		}
+		result.Processed++
+	}
+
+	result.Duration = time.Since(start)
+
+	if o.metrics != nil {
+		o.metrics.RecordSyncDuration("all", "publish", result.Duration.Seconds())
+	}
+
+	if o.logger != nil {
+		o.logger.Info("publish completed",
+			slog.Int("processed", result.Processed),
+			slog.Int("failed", result.Failed),
+			slog.Int("skipped", result.Skipped),
+			slog.Duration("duration", result.Duration),
+		)
+	}
+
+	return result, nil
+}
+
 func (o *Orchestrator) Run(ctx context.Context, opts SyncOptions) (*SyncResult, error) {
 	start := time.Now()
 	o.renamedIDs = make(map[string]bool)

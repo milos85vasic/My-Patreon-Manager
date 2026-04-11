@@ -16,8 +16,8 @@
 /tmp/
 
 # Build artifacts
-cli
-patreon-manager
+/cli
+/patreon-manager
 *.cov
 
 # Test binary
