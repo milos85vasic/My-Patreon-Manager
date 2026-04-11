@@ -1,14 +1,17 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/metrics"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/models"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/services/audit"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/services/sync"
 )
 
@@ -34,6 +37,10 @@ type WebhookHandler struct {
 	// before registering routes but must keep it non-nil. Overflow returns
 	// HTTP 429 rather than silently dropping events.
 	Queue *WebhookQueue[models.Repository]
+	// audit is the structured audit-log sink. Always non-nil after
+	// NewWebhookHandler: defaults to a bounded ring store. Each enqueue
+	// or rejection emits exactly one audit.Entry — see Phase 2 Task 2.
+	audit audit.Store
 }
 
 func NewWebhookHandler(dedup *sync.EventDeduplicator, m metrics.MetricsCollector, logger *slog.Logger) *WebhookHandler {
@@ -42,7 +49,27 @@ func NewWebhookHandler(dedup *sync.EventDeduplicator, m metrics.MetricsCollector
 		metrics: m,
 		logger:  logger,
 		Queue:   NewWebhookQueue[models.Repository](DefaultWebhookQueueCapacity),
+		audit:   audit.NewRingStore(1024),
 	}
+}
+
+// SetAuditStore replaces the handler's audit sink. Passing nil resets it to a
+// bounded in-memory ring store so the handler never holds a nil audit.Store.
+func (h *WebhookHandler) SetAuditStore(s audit.Store) {
+	if s == nil {
+		s = audit.NewRingStore(1024)
+	}
+	h.audit = s
+}
+
+// AuditStore returns the handler's current audit sink. Test-only accessor.
+func (h *WebhookHandler) AuditStore() audit.Store { return h.audit }
+
+func (h *WebhookHandler) emitAudit(ctx context.Context, e audit.Entry) {
+	if e.CreatedAt.IsZero() {
+		e.CreatedAt = time.Now()
+	}
+	_ = h.audit.Write(ctx, e)
 }
 
 func (h *WebhookHandler) GitHubWebhook(c *gin.Context) {
@@ -87,9 +114,23 @@ func (h *WebhookHandler) GitHubWebhook(c *gin.Context) {
 				if h.metrics != nil {
 					h.metrics.RecordWebhookEvent("github", eventType)
 				}
+				h.emitAudit(c.Request.Context(), audit.Entry{
+					Actor:    "webhook",
+					Action:   "webhook.reject",
+					Target:   repo.ID,
+					Outcome:  "full",
+					Metadata: map[string]string{"service": "github", "event": eventType},
+				})
 				c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"status": "queue_full", "event": eventType})
 				return
 			}
+			h.emitAudit(c.Request.Context(), audit.Entry{
+				Actor:    "webhook",
+				Action:   "webhook.enqueue",
+				Target:   repo.ID,
+				Outcome:  "ok",
+				Metadata: map[string]string{"service": "github", "event": eventType},
+			})
 		}
 	}
 
@@ -142,9 +183,23 @@ func (h *WebhookHandler) GitLabWebhook(c *gin.Context) {
 				if h.metrics != nil {
 					h.metrics.RecordWebhookEvent("gitlab", eventType)
 				}
+				h.emitAudit(c.Request.Context(), audit.Entry{
+					Actor:    "webhook",
+					Action:   "webhook.reject",
+					Target:   repo.ID,
+					Outcome:  "full",
+					Metadata: map[string]string{"service": "gitlab", "event": eventType},
+				})
 				c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"status": "queue_full", "event": eventType})
 				return
 			}
+			h.emitAudit(c.Request.Context(), audit.Entry{
+				Actor:    "webhook",
+				Action:   "webhook.enqueue",
+				Target:   repo.ID,
+				Outcome:  "ok",
+				Metadata: map[string]string{"service": "gitlab", "event": eventType},
+			})
 		}
 	}
 
@@ -169,6 +224,14 @@ func (h *WebhookHandler) GenericWebhook(c *gin.Context) {
 	if h.logger != nil {
 		h.logger.Info("webhook received", slog.String("service", service))
 	}
+
+	h.emitAudit(c.Request.Context(), audit.Entry{
+		Actor:    "webhook",
+		Action:   "webhook.enqueue",
+		Target:   service,
+		Outcome:  "ok",
+		Metadata: map[string]string{"service": service, "event": "push"},
+	})
 
 	c.JSON(200, gin.H{"status": "queued", "service": service})
 }

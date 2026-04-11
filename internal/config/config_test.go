@@ -26,6 +26,7 @@ func TestNewConfigDefaults(t *testing.T) {
 	assert.Equal(t, "https://gitlab.com", cfg.GitLabBaseURL)
 	assert.Equal(t, "linear", cfg.ContentTierMappingStrategy)
 	assert.Equal(t, 24, cfg.GracePeriodHours)
+	assert.Equal(t, "ring", cfg.AuditStore)
 
 	// Zero values for fields without defaults
 	assert.Empty(t, cfg.PatreonClientID)
@@ -80,6 +81,7 @@ func TestLoadFromEnv(t *testing.T) {
 	t.Setenv("GITVERSE_TOKEN_SECONDARY", "gv-token2")
 	t.Setenv("CONTENT_TIER_MAPPING_STRATEGY", "exponential")
 	t.Setenv("GRACE_PERIOD_HOURS", "48")
+	t.Setenv("AUDIT_STORE", "sqlite")
 
 	cfg := NewConfig()
 	cfg.LoadFromEnv()
@@ -116,6 +118,7 @@ func TestLoadFromEnv(t *testing.T) {
 	assert.Equal(t, "gv-token2", cfg.GitVerseTokenSecondary)
 	assert.Equal(t, "exponential", cfg.ContentTierMappingStrategy)
 	assert.Equal(t, 48, cfg.GracePeriodHours)
+	assert.Equal(t, "sqlite", cfg.AuditStore)
 }
 
 func TestLoadFromEnv_DefaultValues(t *testing.T) {
@@ -138,6 +141,7 @@ func TestLoadFromEnv_DefaultValues(t *testing.T) {
 	assert.Equal(t, "https://gitlab.com", cfg.GitLabBaseURL)
 	assert.Equal(t, "linear", cfg.ContentTierMappingStrategy)
 	assert.Equal(t, 24, cfg.GracePeriodHours)
+	assert.Equal(t, "ring", cfg.AuditStore)
 }
 
 func TestValidate(t *testing.T) {

@@ -16,6 +16,7 @@ import (
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/git"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/patreon"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/renderer"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/services/audit"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/services/content"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/services/filter"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/utils"
@@ -97,6 +98,11 @@ type Orchestrator struct {
 	logger     *slog.Logger
 	mirrorURLs map[string][]renderer.MirrorURL
 	renamedIDs map[string]bool
+	// audit is the structured audit-log sink. Always non-nil after
+	// NewOrchestrator: defaults to a bounded ring store. Every mutation
+	// path (sync run, per-repo processing, publish) emits exactly one
+	// audit.Entry — see Phase 2 Task 2.
+	audit audit.Store
 }
 
 func NewOrchestrator(
@@ -122,13 +128,47 @@ func NewOrchestrator(
 		metrics:    m,
 		logger:     logger,
 		renamedIDs: make(map[string]bool),
+		audit:      audit.NewRingStore(1024),
 	}
+}
+
+// SetAuditStore replaces the orchestrator's audit sink. Passing nil resets it
+// to a bounded in-memory ring store so the orchestrator never holds a nil
+// audit.Store.
+func (o *Orchestrator) SetAuditStore(s audit.Store) {
+	if s == nil {
+		s = audit.NewRingStore(1024)
+	}
+	o.audit = s
+}
+
+// AuditStore returns the orchestrator's current audit sink. Test-only
+// accessor; production callers should not depend on this.
+func (o *Orchestrator) AuditStore() audit.Store { return o.audit }
+
+// emitAudit writes a single audit entry, stamping CreatedAt if the caller did
+// not. Errors from the underlying store are intentionally ignored: audit
+// writes must never fail a mutation.
+func (o *Orchestrator) emitAudit(ctx context.Context, e audit.Entry) {
+	if e.CreatedAt.IsZero() {
+		e.CreatedAt = time.Now()
+	}
+	_ = o.audit.Write(ctx, e)
 }
 
 func (o *Orchestrator) Run(ctx context.Context, opts SyncOptions) (*SyncResult, error) {
 	start := time.Now()
 	o.renamedIDs = make(map[string]bool)
 	result := &SyncResult{}
+
+	startAction := "sync.start"
+	if opts.DryRun {
+		startAction = "sync.dryrun.start"
+	}
+	o.emitAudit(ctx, audit.Entry{
+		Actor:  "orchestrator",
+		Action: startAction,
+	})
 
 	if o.metrics != nil {
 		o.metrics.SetActiveSyncs(1)
@@ -217,12 +257,35 @@ func (o *Orchestrator) Run(ctx context.Context, opts SyncOptions) (*SyncResult, 
 			break
 		}
 
+		repoAction := "sync.repo"
+		if opts.DryRun {
+			repoAction = "sync.dryrun.repo"
+		}
+		repoTarget := fmt.Sprintf("%s/%s", repo.Owner, repo.Name)
+
 		processed, err := o.processRepo(ctx, repo, allRepos, opts, dryRunReport)
 		if err != nil {
 			result.Failed++
 			result.Errors = append(result.Errors, fmt.Sprintf("%s/%s: %v", repo.Owner, repo.Name, err))
+			o.emitAudit(ctx, audit.Entry{
+				Actor:    "orchestrator",
+				Action:   repoAction,
+				Target:   repoTarget,
+				Outcome:  "error",
+				Metadata: map[string]string{"error": shortErr(err)},
+			})
 			continue
 		}
+		outcome := "ok"
+		if !processed {
+			outcome = "skipped"
+		}
+		o.emitAudit(ctx, audit.Entry{
+			Actor:   "orchestrator",
+			Action:  repoAction,
+			Target:  repoTarget,
+			Outcome: outcome,
+		})
 		if processed {
 			result.Processed++
 		} else {
@@ -488,13 +551,36 @@ func (o *Orchestrator) createOrUpdatePost(ctx context.Context, repo models.Repos
 	if action == "create" {
 		patreonPost, err = o.patreon.CreatePost(ctx, post)
 		if err != nil {
+			o.emitAudit(ctx, audit.Entry{
+				Actor:    "orchestrator",
+				Action:   "sync.publish",
+				Target:   post.ID,
+				Outcome:  "error",
+				Metadata: map[string]string{"error": shortErr(err), "op": "create"},
+			})
 			return fmt.Errorf("create post: %w", err)
 		}
 	} else if action == "update" {
 		patreonPost, err = o.patreon.UpdatePost(ctx, post)
 		if err != nil {
+			o.emitAudit(ctx, audit.Entry{
+				Actor:    "orchestrator",
+				Action:   "sync.publish",
+				Target:   post.ID,
+				Outcome:  "error",
+				Metadata: map[string]string{"error": shortErr(err), "op": "update"},
+			})
 			return fmt.Errorf("update post: %w", err)
 		}
+	}
+	if patreonPost != nil {
+		o.emitAudit(ctx, audit.Entry{
+			Actor:    "orchestrator",
+			Action:   "sync.publish",
+			Target:   patreonPost.ID,
+			Outcome:  "ok",
+			Metadata: map[string]string{"op": action},
+		})
 	}
 	if o.db != nil {
 		if action == "create" {
@@ -615,6 +701,21 @@ func (o *Orchestrator) DetectRename(ctx context.Context, repo models.Repository,
 		}
 	}
 	return nil, false
+}
+
+// shortErr renders an error as a compact, token-free description suitable for
+// audit metadata. The full error string may include URLs or auth-related
+// substrings; we keep only the leading 96 characters and replace any "token"
+// substring to be conservative.
+func shortErr(err error) string {
+	if err == nil {
+		return ""
+	}
+	s := err.Error()
+	if len(s) > 96 {
+		s = s[:96]
+	}
+	return strings.ReplaceAll(s, "token", "***")
 }
 
 // isNotFoundError returns true if err indicates a 404 Not Found error.

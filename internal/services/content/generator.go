@@ -11,6 +11,7 @@ import (
 	"github.com/milos85vasic/My-Patreon-Manager/internal/models"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/llm"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/renderer"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/services/audit"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/utils"
 )
 
@@ -22,6 +23,11 @@ type Generator struct {
 	metrics     metrics.MetricsCollector
 	renderers   []renderer.FormatRenderer
 	reviewQueue *ReviewQueue
+	// audit is the structured audit-log sink. Always non-nil after
+	// NewGenerator: defaults to a bounded ring store. Each call to
+	// GenerateForRepository emits exactly one audit.Entry — see
+	// Phase 2 Task 2.
+	audit audit.Store
 }
 
 func NewGenerator(
@@ -39,11 +45,35 @@ func NewGenerator(
 		store:     store,
 		metrics:   m,
 		renderers: renderers,
+		audit:     audit.NewRingStore(1024),
 	}
 }
 
 func (g *Generator) SetReviewQueue(rq *ReviewQueue) {
 	g.reviewQueue = rq
+}
+
+// SetAuditStore replaces the generator's audit sink. Passing nil resets it to
+// a bounded in-memory ring store so the generator never holds a nil
+// audit.Store.
+func (g *Generator) SetAuditStore(s audit.Store) {
+	if s == nil {
+		s = audit.NewRingStore(1024)
+	}
+	g.audit = s
+}
+
+// AuditStore returns the generator's current audit sink. Test-only accessor.
+func (g *Generator) AuditStore() audit.Store { return g.audit }
+
+// emitAudit writes a single audit entry, stamping CreatedAt if the caller did
+// not. Errors are intentionally ignored — audit writes must never fail
+// generation.
+func (g *Generator) emitAudit(ctx context.Context, e audit.Entry) {
+	if e.CreatedAt.IsZero() {
+		e.CreatedAt = time.Now()
+	}
+	_ = g.audit.Write(ctx, e)
 }
 
 func (g *Generator) GenerateForRepository(
@@ -62,6 +92,13 @@ func (g *Generator) GenerateForRepository(
 
 	if g.budget != nil {
 		if err := g.budget.CheckBudget(opts.MaxTokens); err != nil {
+			g.emitAudit(ctx, audit.Entry{
+				Actor:    "content",
+				Action:   "content.generate",
+				Target:   repo.ID,
+				Outcome:  "error",
+				Metadata: map[string]string{"error": "budget exhausted"},
+			})
 			return nil, fmt.Errorf("token budget insufficient for generation: %w", err)
 		}
 		if g.metrics != nil {
@@ -80,6 +117,13 @@ func (g *Generator) GenerateForRepository(
 		}
 		// If context is done, don't retry
 		if ctx.Err() != nil {
+			g.emitAudit(ctx, audit.Entry{
+				Actor:    "content",
+				Action:   "content.generate",
+				Target:   repo.ID,
+				Outcome:  "error",
+				Metadata: map[string]string{"error": "context cancelled"},
+			})
 			return nil, fmt.Errorf("generate content: %w", err)
 		}
 		// If this is the last attempt, break and return error
@@ -94,12 +138,26 @@ func (g *Generator) GenerateForRepository(
 			if !timer.Stop() {
 				<-timer.C
 			}
+			g.emitAudit(ctx, audit.Entry{
+				Actor:    "content",
+				Action:   "content.generate",
+				Target:   repo.ID,
+				Outcome:  "error",
+				Metadata: map[string]string{"error": "context cancelled"},
+			})
 			return nil, fmt.Errorf("generate content: %w", err)
 		case <-timer.C:
 			// continue retry
 		}
 	}
 	if err != nil {
+		g.emitAudit(ctx, audit.Entry{
+			Actor:    "content",
+			Action:   "content.generate",
+			Target:   repo.ID,
+			Outcome:  "error",
+			Metadata: map[string]string{"error": "llm exhausted retries"},
+		})
 		return nil, fmt.Errorf("generate content: %w", err)
 	}
 	if g.metrics != nil {
@@ -149,6 +207,13 @@ func (g *Generator) GenerateForRepository(
 
 	if g.store != nil {
 		if err := g.store.Create(ctx, generated); err != nil {
+			g.emitAudit(ctx, audit.Entry{
+				Actor:    "content",
+				Action:   "content.generate",
+				Target:   repo.ID,
+				Outcome:  "error",
+				Metadata: map[string]string{"error": "store failed"},
+			})
 			return generated, fmt.Errorf("store generated content: %w", err)
 		}
 	}
@@ -161,6 +226,20 @@ func (g *Generator) GenerateForRepository(
 		g.metrics.RecordContentGenerated("markdown", qualityTier)
 		g.metrics.RecordLLMQualityScore(repo.Name, content.QualityScore)
 	}
+
+	outcome := "ok"
+	if !passed {
+		outcome = "rejected"
+	}
+	g.emitAudit(ctx, audit.Entry{
+		Actor:   "content",
+		Action:  "content.generate",
+		Target:  repo.ID,
+		Outcome: outcome,
+		Metadata: map[string]string{
+			"model": content.ModelUsed,
+		},
+	})
 
 	return generated, nil
 }

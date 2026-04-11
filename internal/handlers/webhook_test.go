@@ -12,10 +12,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/metrics"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/models"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/services/audit"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/services/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// auditNewRingStoreShim wraps audit.NewRingStore so test files do not need to
+// individually re-import audit when only one test references it.
+func auditNewRingStoreShim() audit.Store { return audit.NewRingStore(8) }
 
 // mockMetricsCollector implements metrics.MetricsCollector for testing
 type mockMetricsCollector struct{}
@@ -284,4 +289,106 @@ func TestGenericWebhook(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.JSONEq(t, `{"status":"queued","service":"unknown"}`, w.Body.String())
+
+	entries, err := handler.AuditStore().List(context.Background(), 10)
+	require.NoError(t, err)
+	require.Len(t, entries, 1)
+	assert.Equal(t, "webhook", entries[0].Actor)
+	assert.Equal(t, "webhook.enqueue", entries[0].Action)
+}
+
+// TestWebhookHandler_AuditEmission asserts that successful enqueues, queue
+// rejections, and the generic-service path each emit exactly one audit entry.
+func TestWebhookHandler_AuditEmission(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("github enqueue ok", func(t *testing.T) {
+		dedup := sync.NewEventDeduplicator(5 * time.Minute)
+		t.Cleanup(func() { _ = dedup.Close() })
+		h := NewWebhookHandler(dedup, &mockMetricsCollector{}, slog.Default())
+		r := gin.New()
+		r.POST("/webhook/github", h.GitHubWebhook)
+		payload := `{"repository":{"full_name":"a/b","html_url":"https://x"}}`
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/webhook/github", bytes.NewBufferString(payload))
+		req.Header.Set("X-GitHub-Delivery", "audit-1")
+		req.Header.Set("X-GitHub-Event", "push")
+		r.ServeHTTP(w, req)
+		entries, _ := h.AuditStore().List(context.Background(), 10)
+		require.Len(t, entries, 1)
+		assert.Equal(t, "webhook.enqueue", entries[0].Action)
+		assert.Equal(t, "ok", entries[0].Outcome)
+	})
+
+	t.Run("github enqueue full", func(t *testing.T) {
+		dedup := sync.NewEventDeduplicator(5 * time.Minute)
+		t.Cleanup(func() { _ = dedup.Close() })
+		h := NewWebhookHandler(dedup, &mockMetricsCollector{}, slog.Default())
+		queue := NewWebhookQueue[models.Repository](1)
+		queue.TryEnqueue(models.Repository{ID: "filler"})
+		h.Queue = queue
+		r := gin.New()
+		r.POST("/webhook/github", h.GitHubWebhook)
+		payload := `{"repository":{"full_name":"a/b","html_url":"https://x"}}`
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/webhook/github", bytes.NewBufferString(payload))
+		req.Header.Set("X-GitHub-Delivery", "audit-2")
+		req.Header.Set("X-GitHub-Event", "push")
+		r.ServeHTTP(w, req)
+		entries, _ := h.AuditStore().List(context.Background(), 10)
+		require.Len(t, entries, 1)
+		assert.Equal(t, "webhook.reject", entries[0].Action)
+		assert.Equal(t, "full", entries[0].Outcome)
+	})
+
+	t.Run("gitlab enqueue ok", func(t *testing.T) {
+		dedup := sync.NewEventDeduplicator(5 * time.Minute)
+		t.Cleanup(func() { _ = dedup.Close() })
+		h := NewWebhookHandler(dedup, &mockMetricsCollector{}, slog.Default())
+		r := gin.New()
+		r.POST("/webhook/gitlab", h.GitLabWebhook)
+		payload := `{"project":{"path_with_namespace":"g/p","web_url":"https://x"}}`
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/webhook/gitlab", bytes.NewBufferString(payload))
+		req.Header.Set("X-Gitlab-Event", "Push Hook")
+		req.Header.Set("X-Gitlab-Token", "audit-3")
+		r.ServeHTTP(w, req)
+		entries, _ := h.AuditStore().List(context.Background(), 10)
+		require.Len(t, entries, 1)
+		assert.Equal(t, "webhook.enqueue", entries[0].Action)
+	})
+
+	t.Run("gitlab enqueue full", func(t *testing.T) {
+		dedup := sync.NewEventDeduplicator(5 * time.Minute)
+		t.Cleanup(func() { _ = dedup.Close() })
+		h := NewWebhookHandler(dedup, &mockMetricsCollector{}, slog.Default())
+		queue := NewWebhookQueue[models.Repository](1)
+		queue.TryEnqueue(models.Repository{ID: "filler"})
+		h.Queue = queue
+		r := gin.New()
+		r.POST("/webhook/gitlab", h.GitLabWebhook)
+		payload := `{"project":{"path_with_namespace":"g/p","web_url":"https://x"}}`
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/webhook/gitlab", bytes.NewBufferString(payload))
+		req.Header.Set("X-Gitlab-Event", "Push Hook")
+		req.Header.Set("X-Gitlab-Token", "audit-4")
+		r.ServeHTTP(w, req)
+		entries, _ := h.AuditStore().List(context.Background(), 10)
+		require.Len(t, entries, 1)
+		assert.Equal(t, "webhook.reject", entries[0].Action)
+		assert.Equal(t, "full", entries[0].Outcome)
+	})
+}
+
+func TestWebhookHandler_SetAuditStore(t *testing.T) {
+	dedup := sync.NewEventDeduplicator(5 * time.Minute)
+	t.Cleanup(func() { _ = dedup.Close() })
+	h := NewWebhookHandler(dedup, &mockMetricsCollector{}, slog.Default())
+	custom := auditNewRingStoreShim()
+	h.SetAuditStore(custom)
+	assert.Same(t, custom, h.AuditStore())
+
+	h.SetAuditStore(nil)
+	assert.NotNil(t, h.AuditStore())
+	assert.NotSame(t, custom, h.AuditStore())
 }

@@ -39,6 +39,11 @@ type Config struct {
 	GitVerseTokenSecondary     string
 	ContentTierMappingStrategy string
 	GracePeriodHours           int
+	// AuditStore selects the audit.Store backend. Valid values: "ring"
+	// (bounded in-memory, default) or "sqlite" (persists into the shared
+	// database connection). Wired into cmd/cli and cmd/server in Phase 2
+	// Task 2.
+	AuditStore string
 }
 
 func NewConfig() *Config {
@@ -58,6 +63,7 @@ func NewConfig() *Config {
 		GitLabBaseURL:              "https://gitlab.com",
 		ContentTierMappingStrategy: "linear",
 		GracePeriodHours:           24,
+		AuditStore:                 "ring",
 	}
 }
 
@@ -162,4 +168,5 @@ func (c *Config) LoadFromEnv() {
 	c.GitVerseTokenSecondary = getEnv("GITVERSE_TOKEN_SECONDARY", c.GitVerseTokenSecondary)
 	c.ContentTierMappingStrategy = getEnv("CONTENT_TIER_MAPPING_STRATEGY", c.ContentTierMappingStrategy)
 	c.GracePeriodHours = getEnvInt("GRACE_PERIOD_HOURS", c.GracePeriodHours)
+	c.AuditStore = getEnv("AUDIT_STORE", c.AuditStore)
 }

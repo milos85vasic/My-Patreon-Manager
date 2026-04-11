@@ -8,8 +8,10 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/services/audit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // mockTierGater is a mock for access.TierGater
@@ -162,4 +164,117 @@ func TestAccessHandler_CheckAccess_MissingParams(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.JSONEq(t, `{"error":"missing patron_id or required_tier"}`, w.Body.String())
+}
+
+func TestAccessHandler_AuditEmission(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("download success emits ok", func(t *testing.T) {
+		urlGen := &mockSignedURLGenerator{}
+		urlGen.On("VerifySignedURL", "tok", "cid", "sub1", int64(42)).Return(true)
+		h := NewAccessHandler(nil, urlGen, slog.Default())
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Params = gin.Params{{Key: "content_id", Value: "cid"}}
+		c.Request = httptest.NewRequest("GET", "/dl/cid?token=tok&sub=sub1&exp=42", nil)
+		h.Download(c)
+
+		entries, err := h.AuditStore().List(context.Background(), 10)
+		require.NoError(t, err)
+		require.Len(t, entries, 1)
+		assert.Equal(t, "access", entries[0].Actor)
+		assert.Equal(t, "access.download", entries[0].Action)
+		assert.Equal(t, "ok", entries[0].Outcome)
+	})
+
+	t.Run("download missing params emits error", func(t *testing.T) {
+		h := NewAccessHandler(nil, nil, slog.Default())
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Params = gin.Params{{Key: "content_id", Value: "cid"}}
+		c.Request = httptest.NewRequest("GET", "/dl/cid", nil)
+		h.Download(c)
+		entries, _ := h.AuditStore().List(context.Background(), 10)
+		require.Len(t, entries, 1)
+		assert.Equal(t, "error", entries[0].Outcome)
+	})
+
+	t.Run("download invalid expiry emits error", func(t *testing.T) {
+		h := NewAccessHandler(nil, nil, slog.Default())
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Params = gin.Params{{Key: "content_id", Value: "cid"}}
+		c.Request = httptest.NewRequest("GET", "/dl/cid?token=t&sub=s&exp=bad", nil)
+		h.Download(c)
+		entries, _ := h.AuditStore().List(context.Background(), 10)
+		require.Len(t, entries, 1)
+		assert.Equal(t, "error", entries[0].Outcome)
+	})
+
+	t.Run("download denied emits denied", func(t *testing.T) {
+		urlGen := &mockSignedURLGenerator{}
+		urlGen.On("VerifySignedURL", "bad", "cid", "s", int64(1)).Return(false)
+		h := NewAccessHandler(nil, urlGen, slog.Default())
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Params = gin.Params{{Key: "content_id", Value: "cid"}}
+		c.Request = httptest.NewRequest("GET", "/dl/cid?token=bad&sub=s&exp=1", nil)
+		h.Download(c)
+		entries, _ := h.AuditStore().List(context.Background(), 10)
+		require.Len(t, entries, 1)
+		assert.Equal(t, "denied", entries[0].Outcome)
+	})
+
+	t.Run("check access ok emits ok", func(t *testing.T) {
+		gater := &mockTierGater{}
+		gater.On("VerifyAccess", mock.Anything, "p", "cid", "gold", mock.Anything).Return(true, "", nil)
+		h := NewAccessHandler(gater, nil, slog.Default())
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Params = gin.Params{{Key: "content_id", Value: "cid"}}
+		c.Request = httptest.NewRequest("GET", "/check/cid?patron_id=p&required_tier=gold", nil)
+		h.CheckAccess(c)
+		entries, _ := h.AuditStore().List(context.Background(), 10)
+		require.Len(t, entries, 1)
+		assert.Equal(t, "ok", entries[0].Outcome)
+		assert.Equal(t, "access.check", entries[0].Action)
+	})
+
+	t.Run("check access denied emits denied", func(t *testing.T) {
+		gater := &mockTierGater{}
+		gater.On("VerifyAccess", mock.Anything, "p", "cid", "gold", mock.Anything).Return(false, "https://upgrade", nil)
+		h := NewAccessHandler(gater, nil, slog.Default())
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Params = gin.Params{{Key: "content_id", Value: "cid"}}
+		c.Request = httptest.NewRequest("GET", "/check/cid?patron_id=p&required_tier=gold", nil)
+		h.CheckAccess(c)
+		entries, _ := h.AuditStore().List(context.Background(), 10)
+		require.Len(t, entries, 1)
+		assert.Equal(t, "denied", entries[0].Outcome)
+	})
+
+	t.Run("check access missing params emits error", func(t *testing.T) {
+		h := NewAccessHandler(nil, nil, slog.Default())
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Params = gin.Params{{Key: "content_id", Value: "cid"}}
+		c.Request = httptest.NewRequest("GET", "/check/cid", nil)
+		h.CheckAccess(c)
+		entries, _ := h.AuditStore().List(context.Background(), 10)
+		require.Len(t, entries, 1)
+		assert.Equal(t, "error", entries[0].Outcome)
+	})
+}
+
+func TestAccessHandler_SetAuditStore(t *testing.T) {
+	h := NewAccessHandler(nil, nil, slog.Default())
+	custom := audit.NewRingStore(4)
+	h.SetAuditStore(custom)
+	assert.Same(t, custom, h.AuditStore())
+
+	h.SetAuditStore(nil)
+	assert.NotNil(t, h.AuditStore())
+	assert.NotSame(t, custom, h.AuditStore())
 }
