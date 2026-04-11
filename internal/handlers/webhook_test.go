@@ -40,6 +40,7 @@ func TestGitHubWebhook_DuplicateIgnored(t *testing.T) {
 	router := gin.New()
 
 	dedup := sync.NewEventDeduplicator(5 * time.Minute)
+	t.Cleanup(func() { _ = dedup.Close() })
 	metrics := &mockMetricsCollector{}
 	logger := slog.New(slog.NewTextHandler(&bytes.Buffer{}, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	handler := NewWebhookHandler(dedup, metrics, logger)
@@ -71,6 +72,7 @@ func TestGitHubWebhook_ValidPayload(t *testing.T) {
 	router := gin.New()
 
 	dedup := sync.NewEventDeduplicator(5 * time.Minute)
+	t.Cleanup(func() { _ = dedup.Close() })
 	metrics := &mockMetricsCollector{}
 	logger := slog.New(slog.NewTextHandler(&bytes.Buffer{}, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	handler := NewWebhookHandler(dedup, metrics, logger)
@@ -92,6 +94,7 @@ func TestGitHubWebhook_Queue(t *testing.T) {
 	router := gin.New()
 
 	dedup := sync.NewEventDeduplicator(5 * time.Minute)
+	t.Cleanup(func() { _ = dedup.Close() })
 	metrics := &mockMetricsCollector{}
 	logger := slog.New(slog.NewTextHandler(&bytes.Buffer{}, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	handler := NewWebhookHandler(dedup, metrics, logger)
@@ -130,6 +133,7 @@ func TestGitHubWebhook_QueueFull(t *testing.T) {
 	router := gin.New()
 
 	dedup := sync.NewEventDeduplicator(5 * time.Minute)
+	t.Cleanup(func() { _ = dedup.Close() })
 	metrics := &mockMetricsCollector{}
 	var buf bytes.Buffer
 	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo}))
@@ -154,6 +158,7 @@ func TestGitHubWebhook_QueueFull(t *testing.T) {
 
 func TestGitHubWebhook_DefaultQueueNonNil(t *testing.T) {
 	dedup := sync.NewEventDeduplicator(5 * time.Minute)
+	t.Cleanup(func() { _ = dedup.Close() })
 	metrics := &mockMetricsCollector{}
 	logger := slog.New(slog.NewTextHandler(&bytes.Buffer{}, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	handler := NewWebhookHandler(dedup, metrics, logger)
@@ -170,6 +175,7 @@ func TestGitLabWebhook_QueueFull(t *testing.T) {
 	router := gin.New()
 
 	dedup := sync.NewEventDeduplicator(5 * time.Minute)
+	t.Cleanup(func() { _ = dedup.Close() })
 	metrics := &mockMetricsCollector{}
 	var buf bytes.Buffer
 	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo}))
@@ -196,6 +202,7 @@ func TestGitLabWebhook_Queue(t *testing.T) {
 	router := gin.New()
 
 	dedup := sync.NewEventDeduplicator(5 * time.Minute)
+	t.Cleanup(func() { _ = dedup.Close() })
 	metrics := &mockMetricsCollector{}
 	logger := slog.New(slog.NewTextHandler(&bytes.Buffer{}, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	handler := NewWebhookHandler(dedup, metrics, logger)
@@ -232,6 +239,7 @@ func TestGitLabWebhook(t *testing.T) {
 	router := gin.New()
 
 	dedup := sync.NewEventDeduplicator(5 * time.Minute)
+	t.Cleanup(func() { _ = dedup.Close() })
 	metrics := &mockMetricsCollector{}
 	logger := slog.New(slog.NewTextHandler(&bytes.Buffer{}, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	handler := NewWebhookHandler(dedup, metrics, logger)
@@ -263,6 +271,7 @@ func TestGenericWebhook(t *testing.T) {
 	router := gin.New()
 
 	dedup := sync.NewEventDeduplicator(5 * time.Minute)
+	t.Cleanup(func() { _ = dedup.Close() })
 	metrics := &mockMetricsCollector{}
 	logger := slog.New(slog.NewTextHandler(&bytes.Buffer{}, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	handler := NewWebhookHandler(dedup, metrics, logger)
