@@ -26,6 +26,7 @@ type Config struct {
 	LLMDailyTokenBudget        int
 	LLMConcurrency             int
 	VideoGenerationEnabled     bool
+	PDFRenderingEnabled        bool
 	LogLevel                   string
 	HMACSecret                 string
 	GitHubToken                string
@@ -75,6 +76,7 @@ func NewConfig() *Config {
 		LLMDailyTokenBudget:        100000,
 		LLMConcurrency:             8,
 		VideoGenerationEnabled:     false,
+		PDFRenderingEnabled:        false,
 		LogLevel:                   "info",
 		GitLabBaseURL:              "https://gitlab.com",
 		ContentTierMappingStrategy: "linear",
@@ -173,6 +175,7 @@ func (c *Config) LoadFromEnv() {
 	c.LLMDailyTokenBudget = getEnvInt("LLM_DAILY_TOKEN_BUDGET", c.LLMDailyTokenBudget)
 	c.LLMConcurrency = getEnvInt("LLM_CONCURRENCY", c.LLMConcurrency)
 	c.VideoGenerationEnabled = getEnvBool("VIDEO_GENERATION_ENABLED", c.VideoGenerationEnabled)
+	c.PDFRenderingEnabled = getEnvBool("PDF_RENDERING_ENABLED", c.PDFRenderingEnabled)
 	c.LogLevel = getEnv("LOG_LEVEL", c.LogLevel)
 	c.HMACSecret = getEnv("HMAC_SECRET", c.HMACSecret)
 	c.GitHubToken = getEnv("GITHUB_TOKEN", c.GitHubToken)

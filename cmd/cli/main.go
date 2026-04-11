@@ -17,7 +17,6 @@ import (
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/git"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/llm"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/patreon"
-	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/renderer"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/services/content"
 	syncsvc "github.com/milos85vasic/My-Patreon-Manager/internal/services/sync"
 )
@@ -112,13 +111,10 @@ func main() {
 
 	budget := content.NewTokenBudget(cfg.LLMDailyTokenBudget)
 	gate := content.NewQualityGate(cfg.ContentQualityThreshold)
-	renderers := []renderer.FormatRenderer{
-		renderer.NewMarkdownRenderer(),
-		renderer.NewHTMLRenderer(),
-	}
+	renderers := buildRenderers(cfg)
 
 	verifier := llm.NewVerifierClient("", cfg.HMACSecret, promMetrics)
-	fallbackChain := llm.NewFallbackChain([]llm.LLMProvider{verifier}, cfg.ContentQualityThreshold, promMetrics)
+	fallbackChain := buildLLMChain(cfg, []llm.LLMProvider{verifier}, promMetrics)
 	store := db.GeneratedContents()
 	generator := content.NewGenerator(fallbackChain, budget, gate, store, promMetrics, renderers)
 	reviewQueue := content.NewReviewQueue(store)

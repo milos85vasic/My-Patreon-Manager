@@ -21,6 +21,17 @@ func NewVideoPipeline(enabled bool) *VideoPipeline {
 
 func (p *VideoPipeline) IsEnabled() bool { return p.enabled }
 
+// Format returns the renderer format identifier, satisfying the FormatRenderer
+// interface so VideoPipeline can be registered alongside Markdown / HTML / PDF
+// in the content generator's renderer slice.
+func (p *VideoPipeline) Format() string { return "video" }
+
+// SupportedContentTypes reports the MIME types this renderer produces. The
+// current ffmpeg pipeline emits H.264 MP4.
+func (p *VideoPipeline) SupportedContentTypes() []string {
+	return []string{"video/mp4"}
+}
+
 func (p *VideoPipeline) Render(ctx context.Context, content models.Content, opts RenderOptions) ([]byte, error) {
 	if !p.enabled {
 		return nil, fmt.Errorf("video generation is not enabled")

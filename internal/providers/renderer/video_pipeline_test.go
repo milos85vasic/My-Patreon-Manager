@@ -49,3 +49,20 @@ func TestVideoPipeline_CheckDiskSpace(t *testing.T) {
 	err := p.CheckDiskSpace(100)
 	assert.NoError(t, err)
 }
+
+func TestVideoPipeline_Format(t *testing.T) {
+	p := NewVideoPipeline(true)
+	assert.Equal(t, "video", p.Format())
+}
+
+func TestVideoPipeline_SupportedContentTypes(t *testing.T) {
+	p := NewVideoPipeline(true)
+	assert.Equal(t, []string{"video/mp4"}, p.SupportedContentTypes())
+}
+
+// TestVideoPipeline_ImplementsFormatRenderer asserts at compile time that
+// VideoPipeline satisfies the FormatRenderer interface consumed by
+// content.Generator.
+func TestVideoPipeline_ImplementsFormatRenderer(t *testing.T) {
+	var _ FormatRenderer = (*VideoPipeline)(nil)
+}
