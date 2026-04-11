@@ -34,7 +34,7 @@ go vet ./...                                    # static analysis
 bash scripts/coverage.sh                        # full coverage run — gates commits
 ```
 
-`scripts/coverage.sh` enforces **100% per-package coverage** for everything under `internal/` and `cmd/`. It fails the build if any package (or the total) drops below 100%. Run it before committing.
+`scripts/coverage.sh` runs `go test -race` with `-coverpkg=./internal/...,./cmd/...` across `./internal/... ./cmd/... ./tests/...`, writes HTML + func coverage reports to `coverage/`, and hard-fails via `scripts/coverdiff` if any package or the total drops below `COVERAGE_MIN` (default **100.0**, lowerable during phased ramp-up with `COVERAGE_MIN=<n>`). Run it before committing.
 
 ## Architecture
 
