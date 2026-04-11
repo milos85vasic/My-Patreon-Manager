@@ -985,12 +985,15 @@ syft, snyk. Documented in docs/security/README.md."
 
 ```yaml
 # .github/workflows/ci.yml
+# Manual-only: no push/pull_request triggers per project policy.
 name: CI
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      coverage_min:
+        description: "Minimum coverage percent (default 0 during ramp-up)"
+        required: false
+        default: "0"
 
 permissions:
   contents: read
@@ -1016,7 +1019,7 @@ jobs:
       - name: race tests + coverage
         run: bash scripts/coverage.sh
         env:
-          COVERAGE_MIN: "0"
+          COVERAGE_MIN: ${{ inputs.coverage_min }}
       - uses: actions/upload-artifact@v4
         with:
           name: coverage
@@ -1101,12 +1104,9 @@ COVERAGE_MIN=0 until Phase 6 raises coverage to 100%."
 
 ```yaml
 # .github/workflows/security.yml
+# Manual-only: no push/schedule triggers per project policy.
 name: Security
 on:
-  push:
-    branches: [main]
-  schedule:
-    - cron: "0 3 * * *"
   workflow_dispatch:
 
 permissions:
@@ -1116,7 +1116,6 @@ permissions:
 jobs:
   snyk:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' }}
     steps:
       - uses: actions/checkout@v4
       - uses: snyk/actions/golang@master
@@ -1131,7 +1130,6 @@ jobs:
 
   sonarqube:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -1141,7 +1139,7 @@ jobs:
           go-version: "1.26.x"
       - run: bash scripts/coverage.sh
         env:
-          COVERAGE_MIN: "0"
+          COVERAGE_MIN: "0"  # honored as env override; workflow is manual-only
       - uses: SonarSource/sonarqube-scan-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -1214,18 +1212,10 @@ git commit -m "ci(security): add Snyk, SonarQube, Trivy, syft, CodeQL workflow"
 
 ```yaml
 # .github/workflows/docs.yml
+# Manual-only: no push/pull_request triggers per project policy.
 name: Docs
 on:
-  push:
-    branches: [main]
-    paths:
-      - "docs/**"
-      - "*.md"
-      - ".github/workflows/docs.yml"
-  pull_request:
-    paths:
-      - "docs/**"
-      - "*.md"
+  workflow_dispatch:
 
 jobs:
   markdownlint:
@@ -1300,10 +1290,15 @@ git commit -m "ci(docs): add markdownlint, lychee link-check, hugo build"
 
 ```yaml
 # .github/workflows/release.yml
+# Manual-only: dispatched with a version input. No tag triggers.
+# The workflow creates the tag itself once verification completes.
 name: Release
 on:
-  push:
-    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. v0.2.0) — will be created as a signed tag"
+        required: true
 
 permissions:
   contents: write
@@ -1317,6 +1312,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Create tag
+        run: |
+          git config user.name "release-bot"
+          git config user.email "release-bot@users.noreply.github.com"
+          git tag -a "${{ inputs.version }}" -m "${{ inputs.version }}"
       - uses: actions/setup-go@v5
         with:
           go-version: "1.26.x"
@@ -1328,6 +1328,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COSIGN_EXPERIMENTAL: "1"
+          GORELEASER_CURRENT_TAG: ${{ inputs.version }}
 ```
 
 - [ ] **Step 2: Add `.goreleaser.yaml`**

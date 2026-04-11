@@ -155,10 +155,9 @@ git commit -m "feat(website): hugo mounts replace content duplicates"
 - [ ] **Step 1: Write**
 
 ```yaml
+# Manual-only per project policy. Must be dispatched explicitly to publish.
 name: Pages
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read

@@ -213,11 +213,14 @@ git commit -m "feat(release): master verification script for Phase 13 gate"
 - [ ] **Step 1: Write**
 
 ```yaml
+# Manual-only per project policy. Dispatched explicitly with a version input.
 name: Release Gate
 on:
-  push:
-    tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version to verify (e.g. v0.2.0)"
+        required: true
 jobs:
   gate:
     runs-on: ubuntu-latest
@@ -228,11 +231,11 @@ jobs:
       - uses: actions/setup-go@v5
         with: { go-version: "1.26.x" }
       - name: verify_all
-        run: bash scripts/release/verify_all.sh "${GITHUB_REF_NAME}"
+        run: bash scripts/release/verify_all.sh "${{ inputs.version }}"
       - uses: actions/upload-artifact@v4
         with:
-          name: evidence-${{ github.ref_name }}
-          path: docs/releases/${{ github.ref_name }}/evidence/
+          name: evidence-${{ inputs.version }}
+          path: docs/releases/${{ inputs.version }}/evidence/
 ```
 
 - [ ] **Step 2: Commit**

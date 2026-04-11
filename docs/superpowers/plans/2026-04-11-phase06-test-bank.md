@@ -429,10 +429,9 @@ fi
 - [ ] **Step 2: Workflow** `.github/workflows/mutation.yml`:
 
 ```yaml
+# Manual-only per project policy. No schedule trigger.
 name: Mutation
 on:
-  schedule:
-    - cron: "0 4 * * 0"
   workflow_dispatch:
 jobs:
   mutation:
