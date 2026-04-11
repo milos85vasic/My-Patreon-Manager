@@ -20,48 +20,73 @@ type LockManager struct {
 	lockFile string
 	hostname string
 	mu       sync.Mutex
+	// writeFileFn is the function used to persist the on-disk lock file.
+	// It is injectable so tests can swap in a slow writer to assert that
+	// LockManager.mu is not held across blocking I/O.
+	writeFileFn func(path string, data []byte, perm os.FileMode) error
+	// held tracks whether this process currently owns the lock. It is the
+	// only piece of in-memory state protected by mu.
+	held bool
 }
 
 func NewLockManager(db database.Database) *LockManager {
 	hostname, _ := os.Hostname()
 	return &LockManager{
-		db:       db,
-		lockFile: "/tmp/patreon-manager-sync.lock",
-		hostname: hostname,
+		db:          db,
+		lockFile:    "/tmp/patreon-manager-sync.lock",
+		hostname:    hostname,
+		writeFileFn: os.WriteFile,
 	}
 }
 
 func (lm *LockManager) AcquireLock(ctx context.Context) error {
+	// Phase 1: compute desired state under the mutex. We intentionally do
+	// NOT perform any blocking I/O while holding lm.mu — holding the mutex
+	// across os.WriteFile would serialize every caller of LockManager and
+	// block readers of the in-memory state for the duration of disk I/O.
 	lm.mu.Lock()
-	defer lm.mu.Unlock()
-
 	pid := os.Getpid()
 	now := time.Now()
 	expires := now.Add(24 * time.Hour)
-
+	lockFilePath := lm.lockFile
+	hostname := lm.hostname
+	writeFileFn := lm.writeFileFn
 	lockInfo := database.SyncLock{
 		ID:        utils.NewUUID(),
 		PID:       pid,
-		Hostname:  lm.hostname,
+		Hostname:  hostname,
 		StartedAt: now,
 		ExpiresAt: expires,
 	}
+	content := fmt.Sprintf("%d:%s:%s", pid, hostname, now.Format(time.RFC3339))
+	lm.mu.Unlock()
 
-	if err := lm.acquireFileLock(pid); err != nil {
+	// Phase 2: perform the file-write without the mutex held.
+	if err := writeFileFn(lockFilePath, []byte(content), 0644); err != nil {
 		return err
 	}
 
+	// Phase 3: DB acquire (also outside the mutex — the DB has its own
+	// concurrency control).
 	if err := lm.db.AcquireLock(ctx, lockInfo); err != nil {
+		// Best-effort cleanup of the file lock we just wrote.
 		lm.releaseFileLock()
 		return errors.LockContention(fmt.Sprintf("DB lock failed: %v", err))
 	}
 
+	// Phase 4: re-acquire mu briefly to record that we own the lock.
+	lm.mu.Lock()
+	lm.held = true
+	lm.mu.Unlock()
 	return nil
 }
 
 func (lm *LockManager) ReleaseLock(ctx context.Context) error {
+	// Mirror AcquireLock: flip in-memory state under mu, then do I/O outside.
 	lm.mu.Lock()
-	defer lm.mu.Unlock()
+	lm.held = false
+	lm.mu.Unlock()
+
 	lm.releaseFileLock()
 	return lm.db.ReleaseLock(ctx)
 }
@@ -76,11 +101,6 @@ func (lm *LockManager) IsLocked(ctx context.Context) (bool, *database.SyncLock, 
 		return true, lock, nil
 	}
 	return lm.db.IsLocked(ctx)
-}
-
-func (lm *LockManager) acquireFileLock(pid int) error {
-	content := fmt.Sprintf("%d:%s:%s", pid, lm.hostname, time.Now().Format(time.RFC3339))
-	return os.WriteFile(lm.lockFile, []byte(content), 0644)
 }
 
 func (lm *LockManager) releaseFileLock() {
