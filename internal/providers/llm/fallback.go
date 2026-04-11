@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/milos85vasic/My-Patreon-Manager/internal/concurrency"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/metrics"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/models"
 )
@@ -14,9 +15,20 @@ type FallbackChain struct {
 	breakers  []*metrics.CircuitBreaker
 	threshold float64
 	metrics   metrics.MetricsCollector
+	sem       *concurrency.Semaphore
 }
 
-func NewFallbackChain(providers []LLMProvider, threshold float64, m metrics.MetricsCollector) *FallbackChain {
+// Option configures a FallbackChain at construction time.
+type Option func(*FallbackChain)
+
+// WithSemaphore bounds the total number of in-flight GenerateContent calls
+// across every provider in the chain. A nil semaphore (the default) disables
+// the cap entirely.
+func WithSemaphore(s *concurrency.Semaphore) Option {
+	return func(fc *FallbackChain) { fc.sem = s }
+}
+
+func NewFallbackChain(providers []LLMProvider, threshold float64, m metrics.MetricsCollector, opts ...Option) *FallbackChain {
 	breakers := make([]*metrics.CircuitBreaker, len(providers))
 	for i := range providers {
 		breakers[i] = metrics.NewCircuitBreaker(
@@ -25,15 +37,26 @@ func NewFallbackChain(providers []LLMProvider, threshold float64, m metrics.Metr
 			metrics.DefaultOnTrip, metrics.DefaultOnReset,
 		)
 	}
-	return &FallbackChain{
+	fc := &FallbackChain{
 		providers: providers,
 		breakers:  breakers,
 		threshold: threshold,
 		metrics:   m,
 	}
+	for _, o := range opts {
+		o(fc)
+	}
+	return fc
 }
 
 func (fc *FallbackChain) GenerateContent(ctx context.Context, prompt models.Prompt, opts models.GenerationOptions) (models.Content, error) {
+	if fc.sem != nil {
+		if err := fc.sem.Acquire(ctx, 1); err != nil {
+			return models.Content{}, err
+		}
+		defer fc.sem.Release(1)
+	}
+
 	var lastErr error
 	var bestContent models.Content
 	bestScore := -1.0

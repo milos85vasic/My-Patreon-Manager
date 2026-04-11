@@ -24,6 +24,7 @@ type Config struct {
 	DBPath                     string
 	ContentQualityThreshold    float64
 	LLMDailyTokenBudget        int
+	LLMConcurrency             int
 	VideoGenerationEnabled     bool
 	LogLevel                   string
 	HMACSecret                 string
@@ -51,6 +52,7 @@ func NewConfig() *Config {
 		DBPath:                     "patreon_manager.db",
 		ContentQualityThreshold:    0.75,
 		LLMDailyTokenBudget:        100000,
+		LLMConcurrency:             8,
 		VideoGenerationEnabled:     false,
 		LogLevel:                   "info",
 		GitLabBaseURL:              "https://gitlab.com",
@@ -145,6 +147,7 @@ func (c *Config) LoadFromEnv() {
 	c.DBPath = getEnv("DB_PATH", c.DBPath)
 	c.ContentQualityThreshold = getEnvFloat("CONTENT_QUALITY_THRESHOLD", c.ContentQualityThreshold)
 	c.LLMDailyTokenBudget = getEnvInt("LLM_DAILY_TOKEN_BUDGET", c.LLMDailyTokenBudget)
+	c.LLMConcurrency = getEnvInt("LLM_CONCURRENCY", c.LLMConcurrency)
 	c.VideoGenerationEnabled = getEnvBool("VIDEO_GENERATION_ENABLED", c.VideoGenerationEnabled)
 	c.LogLevel = getEnv("LOG_LEVEL", c.LogLevel)
 	c.HMACSecret = getEnv("HMAC_SECRET", c.HMACSecret)
