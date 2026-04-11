@@ -11,6 +11,10 @@ import (
 	"unicode"
 )
 
+var (
+	SignalNotify = signal.Notify
+)
+
 type Pattern struct {
 	Pattern     string
 	IsNegation  bool
@@ -139,11 +143,15 @@ func (r *Repoignore) matchCharClass(url, pattern string) bool {
 	if !strings.HasPrefix(url, prefix) {
 		return false
 	}
-	if suffix != "" && !strings.HasSuffix(url, suffix) {
-		return false
-	}
 	idx := len(prefix)
 	if idx >= len(url) {
+		return false
+	}
+	// suffix must start at idx+1
+	if len(suffix) > len(url)-(idx+1) {
+		return false
+	}
+	if suffix != "" && url[idx+1:] != suffix {
 		return false
 	}
 	for _, c := range class {
@@ -170,7 +178,7 @@ func (r *Repoignore) Reload() error {
 
 func (r *Repoignore) WatchSIGHUP() {
 	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGHUP)
+	SignalNotify(ch, syscall.SIGHUP)
 	go func() {
 		for range ch {
 			if err := r.Reload(); err != nil {
