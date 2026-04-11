@@ -15,6 +15,11 @@
 /dist/
 /tmp/
 
+# Build artifacts
+cli
+patreon-manager
+*.cov
+
 # Test binary
 *.test
 
