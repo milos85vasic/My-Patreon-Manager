@@ -1,0 +1,41 @@
+# .github/workflows/docs.yml
+# Manual-only per project policy.
+name: Docs
+on:
+  workflow_dispatch:
+
+jobs:
+  markdownlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: "**/*.md"
+          config: ".markdownlint.jsonc"
+
+  link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lycheeverse/lychee-action@v1
+        with:
+          args: --no-progress --verbose --exclude-mail './**/*.md'
+
+  hugo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: "latest"
+          extended: true
+      - name: build
+        working-directory: docs/website
+        run: hugo --gc --minify --baseURL "https://milos85vasic.github.io/My-Patreon-Manager/"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: docs/website/public
