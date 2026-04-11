@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/config"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/metrics"
+	syncsvc "github.com/milos85vasic/My-Patreon-Manager/internal/services/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"log/slog"
@@ -49,7 +50,8 @@ func TestSetupRouter(t *testing.T) {
 		GinMode: "test",
 		Port:    8080,
 	}
-	router := setupRouter(cfg, &mockMetricsCollector{})
+	router, dedup := setupRouter(cfg, &mockMetricsCollector{})
+	defer dedup.Close()
 
 	tests := []struct {
 		method string
@@ -250,7 +252,7 @@ func TestMain_Success(t *testing.T) {
 
 	// Mock metrics collector
 	newMetricsCollector = func() metrics.MetricsCollector { return &mockMetricsCollector{} }
-	setupRouterFn = func(*config.Config, metrics.MetricsCollector) *gin.Engine { return gin.New() }
+	setupRouterFn = func(*config.Config, metrics.MetricsCollector) (*gin.Engine, *syncsvc.EventDeduplicator) { return gin.New(), syncsvc.NewEventDeduplicator(time.Minute) }
 
 	// Mock runServer to return nil (success) and cancel context to exit
 	ctx, cancel := context.WithCancel(context.Background())
@@ -326,7 +328,7 @@ func TestMain_Error(t *testing.T) {
 
 	// Mock metrics collector
 	newMetricsCollector = func() metrics.MetricsCollector { return &mockMetricsCollector{} }
-	setupRouterFn = func(*config.Config, metrics.MetricsCollector) *gin.Engine { return gin.New() }
+	setupRouterFn = func(*config.Config, metrics.MetricsCollector) (*gin.Engine, *syncsvc.EventDeduplicator) { return gin.New(), syncsvc.NewEventDeduplicator(time.Minute) }
 
 	// Mock runServer to return an error, which should cause osExit(1)
 	ctx, cancel := context.WithCancel(context.Background())

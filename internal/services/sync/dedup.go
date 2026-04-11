@@ -9,12 +9,16 @@ type EventDeduplicator struct {
 	mu     sync.RWMutex
 	seen   map[string]time.Time
 	window time.Duration
+	stop   chan struct{}
+	done   chan struct{}
 }
 
 func NewEventDeduplicator(window time.Duration) *EventDeduplicator {
 	ed := &EventDeduplicator{
 		seen:   make(map[string]time.Time),
 		window: window,
+		stop:   make(chan struct{}),
+		done:   make(chan struct{}),
 	}
 	go ed.cleanup()
 	return ed
@@ -37,16 +41,32 @@ func (ed *EventDeduplicator) IsDuplicate(eventID string) bool {
 }
 
 func (ed *EventDeduplicator) cleanup() {
+	defer close(ed.done)
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
-	for range ticker.C {
-		ed.mu.Lock()
-		now := time.Now()
-		for id, t := range ed.seen {
-			if now.Sub(t) > ed.window {
-				delete(ed.seen, id)
+	for {
+		select {
+		case <-ed.stop:
+			return
+		case <-ticker.C:
+			ed.mu.Lock()
+			now := time.Now()
+			for id, t := range ed.seen {
+				if now.Sub(t) > ed.window {
+					delete(ed.seen, id)
+				}
 			}
+			ed.mu.Unlock()
 		}
-		ed.mu.Unlock()
+	}
+}
+
+func (ed *EventDeduplicator) Close() error {
+	close(ed.stop)
+	select {
+	case <-ed.done:
+		return nil
+	case <-time.After(1 * time.Second):
+		return ErrShutdownTimeout
 	}
 }

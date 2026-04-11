@@ -52,7 +52,14 @@ func main() {
 
 func runServer(ctx context.Context, cfg *config.Config, addr string, logger *slog.Logger) error {
 	metricsCollector := newMetricsCollector()
-	r := setupRouterFn(cfg, metricsCollector)
+	r, dedup := setupRouterFn(cfg, metricsCollector)
+	defer func() {
+		if dedup != nil {
+			if err := dedup.Close(); err != nil {
+				logger.Error("dedup close failed", slog.String("error", err.Error()))
+			}
+		}
+	}()
 
 	srv := &http.Server{
 		Addr:    addr,
@@ -79,7 +86,7 @@ func runServer(ctx context.Context, cfg *config.Config, addr string, logger *slo
 	return nil
 }
 
-func setupRouter(cfg *config.Config, metricsCollector metrics.MetricsCollector) *gin.Engine {
+func setupRouter(cfg *config.Config, metricsCollector metrics.MetricsCollector) (*gin.Engine, *syncsvc.EventDeduplicator) {
 	gin.SetMode(cfg.GinMode)
 	r := gin.New()
 
@@ -97,5 +104,5 @@ func setupRouter(cfg *config.Config, metricsCollector metrics.MetricsCollector) 
 	r.POST("/webhook/gitlab", webhookHandler.GitLabWebhook)
 	r.POST("/webhook/:service", webhookHandler.GenericWebhook)
 
-	return r
+	return r, dedup
 }
