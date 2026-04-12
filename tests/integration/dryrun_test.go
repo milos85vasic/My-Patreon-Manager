@@ -228,11 +228,7 @@ func TestDryRunReportAccuracy(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, gen2.PassedQualityGate)
 
-	// TODO: audit entries not yet implemented
-	// audits, err := db.AuditEntries().ListByRepository(ctx, "repo-1")
-	// require.NoError(t, err)
-	// assert.NotEmpty(t, audits)
-	// audits2, err := db.AuditEntries().ListByRepository(ctx, "repo-2")
-	// require.NoError(t, err)
-	// assert.NotEmpty(t, audits2)
+	// Audit entries are emitted via the orchestrator's audit.Store (Phase 2),
+	// not via db.AuditEntries() (legacy models.AuditEntry store). The
+	// TestDryRunEmitsAuditEntries test in this package verifies the new path.
 }

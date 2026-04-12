@@ -1,0 +1,11 @@
+# Module 03 Exercise: Customize this .repoignore
+# Add patterns to exclude repos you don't want to publish about.
+
+# Example: exclude all forks
+# *-fork
+
+# Example: exclude archived repos
+# archived-*
+
+# Exercise: add your own patterns, then run:
+# ./patreon-manager scan --dry-run

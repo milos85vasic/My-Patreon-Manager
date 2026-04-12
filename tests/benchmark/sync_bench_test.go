@@ -87,10 +87,36 @@ func BenchmarkFullSync(b *testing.B) {
 }
 
 func BenchmarkSingleRepoSync(b *testing.B) {
-	// Benchmark sync for a single repository (real sync)
-	// Similar to BenchmarkFullSync but with actual writes disabled via dry-run
-	// Use same setup as BenchmarkFullSync
-	b.Skip("TODO: implement if needed")
+	db := database.NewSQLiteDB(":memory:")
+	db.Connect(context.Background(), "")
+	db.Migrate(context.Background())
+	defer db.Close()
+
+	repo := &models.Repository{ID: "bench-single", Service: "github", Owner: "o", Name: "r", URL: "git@github.com:o/r.git", HTTPSURL: "https://github.com/o/r"}
+	db.Repositories().Create(context.Background(), repo)
+
+	gitMock := &mocks.MockRepositoryProvider{
+		NameFunc: func() string { return "github" },
+		ListRepositoriesFunc: func(_ context.Context, _ string, _ git.ListOptions) ([]models.Repository, error) {
+			return []models.Repository{*repo}, nil
+		},
+		GetMetadataFunc: func(_ context.Context, r models.Repository) (models.Repository, error) { return r, nil },
+	}
+	llmMock := &mocks.MockLLMProvider{
+		GenerateContentFunc: func(_ context.Context, _ models.Prompt, _ models.GenerationOptions) (models.Content, error) {
+			return models.Content{Title: "T", Body: "B", QualityScore: 0.9, ModelUsed: "m", TokenCount: 10}, nil
+		},
+	}
+	budget := content.NewTokenBudget(1000000)
+	gate := content.NewQualityGate(0.75)
+	generator := content.NewGenerator(llmMock, budget, gate, db.GeneratedContents(), nil, nil)
+	orc := ssync.NewOrchestrator(db, []git.RepositoryProvider{gitMock}, nil, generator, nil, nil, nil)
+
+	ctx := context.Background()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = orc.Run(ctx, ssync.SyncOptions{DryRun: true})
+	}
 }
 
 func BenchmarkContentGeneration(b *testing.B) {

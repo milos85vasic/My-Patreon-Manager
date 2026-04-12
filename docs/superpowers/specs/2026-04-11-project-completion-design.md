@@ -74,7 +74,7 @@ The spec is the contract for the subsequent implementation plan (to be produced 
 
 ### 4.5 Docs / website / video state
 - `README.md` = 4 lines "Tbd".
-- Typo: `docs/main_specificarion.md`.
+- Typo: `docs/main_specification.md`.
 - `docs/api/openapi.yaml` describes routes `cmd/server/setupRouter` never wires.
 - `internal/database/migrations/` empty despite 8-table schema documented.
 - Video course = outline only; 0 scripts, 0 recordings, 0 examples.
@@ -203,7 +203,7 @@ For every package in `internal/` and `cmd/`:
 
 ### Phase 9 — Documentation overhaul
 - Rewrite `README.md`: summary, badges, install, quickstart, features, architecture diagram, links to deep docs.
-- Rename `docs/main_specificarion.md` → `docs/main_specification.md` and update references.
+- Rename `docs/main_specification.md` → `docs/main_specification.md` and update references.
 - Reframe `docs/The_Core_Idea.md` with a "current implementation" prelude.
 - Rewrite `docs/api/openapi.yaml` to match Phase 2 wiring; add examples per endpoint.
 - Regenerate `docs/architecture/sql-schema.md` from Phase 3 migrations; add ER diagram (`docs/architecture/diagrams/er.mmd`).

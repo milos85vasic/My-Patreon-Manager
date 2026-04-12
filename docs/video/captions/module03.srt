@@ -1,0 +1,23 @@
+1
+00:00:00,000 --> 00:00:30,000
+Module 03: Repository Sync
+
+2
+00:00:30,000 --> 00:02:00,000
+[Section 1 — see script for narration text]
+
+3
+00:02:00,000 --> 00:05:00,000
+[Section 2 — see script for narration text]
+
+4
+00:05:00,000 --> 00:08:00,000
+[Section 3 — see script for narration text]
+
+5
+00:08:00,000 --> 00:10:00,000
+[Section 4 — see script for narration text]
+
+6
+00:10:00,000 --> 00:12:00,000
+[Exercise assignment + end card]

@@ -215,7 +215,7 @@ in README or documentation when conflicts arise.
 - **Compliance review**: Every feature specification and implementation plan
   MUST include a Constitution Check gate. Plans violating principles without
   justified complexity exceptions MUST be rejected.
-- **Spec guidance**: `docs/main_specificarion.md` provides detailed design
+- **Spec guidance**: `docs/main_specification.md` provides detailed design
   direction. This constitution captures non-negotiable constraints. When the
   spec describes implementation details that conflict with constitutional
   principles, the constitution takes precedence.

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Bring every piece of documentation to nano-detail accuracy: rewrite README, fix the typo in `main_specificarion.md`, reframe `The_Core_Idea.md`, rewrite OpenAPI to match wired routes, regenerate SQL schema docs from Phase 3 migrations, add ADRs, runbooks, troubleshooting/FAQ, admin guide, per-package `doc.go`, architecture diagrams, and update `AGENTS.md`.
+**Goal:** Bring every piece of documentation to nano-detail accuracy: rewrite README, fix the typo in `main_specification.md`, reframe `The_Core_Idea.md`, rewrite OpenAPI to match wired routes, regenerate SQL schema docs from Phase 3 migrations, add ADRs, runbooks, troubleshooting/FAQ, admin guide, per-package `doc.go`, architecture diagrams, and update `AGENTS.md`.
 
 **Architecture:** Docs are tested — every code example in docs is extracted and compiled by `go test`, every link is validated by `lychee`, every markdown file lints clean under `markdownlint`. ADRs follow Nygard template. Runbooks follow Google SRE template.
 
@@ -46,7 +46,7 @@
 
 **Modify:**
 - `README.md` — full rewrite
-- `docs/main_specificarion.md` → `docs/main_specification.md` (rename)
+- `docs/main_specification.md` → `docs/main_specification.md` (rename)
 - `docs/The_Core_Idea.md` — reframed intro
 - `docs/api/openapi.yaml` — regenerate from wired routes
 - `docs/architecture/sql-schema.md` — regenerate from Phase 3 migrations
@@ -132,14 +132,14 @@ git commit -m "docs(readme): full rewrite replacing 'Tbd' stub"
 - [ ] **Step 1: Rename**
 
 ```bash
-git mv docs/main_specificarion.md docs/main_specification.md
-grep -rln 'main_specificarion' docs/ | xargs sed -i 's/main_specificarion/main_specification/g'
+git mv docs/main_specification.md docs/main_specification.md
+grep -rln 'main_specification' docs/ | xargs sed -i 's/main_specification/main_specification/g'
 ```
 
 - [ ] **Step 2: Commit**
 
 ```bash
-git commit -m "docs: rename main_specificarion.md to main_specification.md"
+git commit -m "docs: rename main_specification.md to main_specification.md"
 ```
 
 ---
