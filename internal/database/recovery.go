@@ -7,8 +7,11 @@ import (
 	"os"
 )
 
+// newSQLiteDBFunc is swapped in tests to inject failures.
+var newSQLiteDBFunc = func(dsn string) *SQLiteDB { return NewSQLiteDB(dsn) }
+
 func RecoverSQLite(ctx context.Context, dbPath string, logger *slog.Logger) error {
-	sqlite := NewSQLiteDB(dbPath)
+	sqlite := newSQLiteDBFunc(dbPath)
 	err := sqlite.Connect(ctx, dbPath)
 	if err != nil {
 		if logger != nil {
@@ -21,7 +24,7 @@ func RecoverSQLite(ctx context.Context, dbPath string, logger *slog.Logger) erro
 		if logger != nil {
 			logger.Warn("corrupted database backed up", slog.String("backup", backupPath))
 		}
-		sqlite = NewSQLiteDB(dbPath)
+		sqlite = newSQLiteDBFunc(dbPath)
 		if err := sqlite.Connect(ctx, dbPath); err != nil {
 			return fmt.Errorf("reinitialize db: %w", err)
 		}

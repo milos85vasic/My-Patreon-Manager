@@ -25,7 +25,7 @@ func (db *PostgresDB2) Connect(ctx context.Context, dsn string) error {
 		db.dsn = dsn
 	}
 	var err error
-	db.db, err = sql.Open("postgres", db.dsn)
+	db.db, err = sql.Open(db.driver, db.dsn)
 	if err != nil {
 		return fmt.Errorf("postgres connect: %w", err)
 	}
@@ -444,6 +444,9 @@ func (s *PostgresMirrorMapStore) GetAllGroups(ctx context.Context) ([]string, er
 			return nil, err
 		}
 		groups = append(groups, g)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return groups, nil
 }

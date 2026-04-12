@@ -221,6 +221,9 @@ func (s *SQLiteMirrorMapStore) GetAllGroups(ctx context.Context) ([]string, erro
 		}
 		groups = append(groups, g)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return groups, nil
 }
 

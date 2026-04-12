@@ -21,7 +21,7 @@ type SQLiteDB struct {
 }
 
 func NewSQLiteDB(dsn string) *SQLiteDB {
-	return &SQLiteDB{driver: "sqlite", dsn: dsn}
+	return &SQLiteDB{driver: "sqlite3", dsn: dsn}
 }
 
 func (db *SQLiteDB) Connect(ctx context.Context, dsn string) error {
@@ -29,7 +29,7 @@ func (db *SQLiteDB) Connect(ctx context.Context, dsn string) error {
 		db.dsn = dsn
 	}
 	var err error
-	db.db, err = sql.Open("sqlite3", db.dsn)
+	db.db, err = sql.Open(db.driver, db.dsn)
 	if err != nil {
 		return fmt.Errorf("sqlite connect: %w", err)
 	}
