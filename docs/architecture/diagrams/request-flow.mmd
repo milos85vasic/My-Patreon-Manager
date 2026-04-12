@@ -1,0 +1,36 @@
+sequenceDiagram
+    participant W as Webhook (GitHub/GitLab)
+    participant MW as Middleware Stack
+    participant WH as WebhookHandler
+    participant Q as WebhookQueue
+    participant D as Drain Consumer
+    participant O as Orchestrator
+    participant G as Git Provider
+    participant L as LLM Chain
+    participant P as Patreon Client
+    participant A as Audit Store
+    participant DB as Database
+
+    W->>MW: POST /webhook/github
+    MW->>MW: IPRateLimiter.Limit()
+    MW->>MW: WebhookAuth (HMAC-SHA256)
+    MW->>WH: GitHubWebhook()
+    WH->>Q: TryEnqueue(repo)
+    alt Queue full
+        WH-->>W: 429 Too Many Requests
+    else Enqueued
+        WH-->>W: 200 OK
+    end
+    WH->>A: Write(webhook.enqueue)
+
+    D->>Q: Drain(ctx, fn)
+    Q->>D: repo
+    D->>O: EnqueueRepo(ctx, repo)
+    O->>G: ListRepositories(ctx)
+    O->>L: GenerateContent(ctx, repo)
+    L->>L: Semaphore.Acquire
+    L->>L: cb.Execute (circuit breaker)
+    O->>P: CreatePost(ctx, post)
+    P->>P: cb.Execute (circuit breaker)
+    O->>DB: SavePost(ctx, post)
+    O->>A: Write(sync.publish)

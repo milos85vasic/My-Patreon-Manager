@@ -1,0 +1,56 @@
+graph TB
+    subgraph Entrypoints
+        CLI[patreon-manager CLI]
+        SRV[patreon-manager-server]
+    end
+
+    subgraph Orchestration
+        ORCH[Orchestrator]
+        SCHED[Scheduler]
+        FILT[Filter / .repoignore]
+        AUDIT[Audit Store]
+    end
+
+    subgraph Providers
+        GH[GitHub Provider]
+        GL[GitLab Provider]
+        GF[GitFlic Provider]
+        GV[GitVerse Provider]
+        LLM[LLM Fallback Chain]
+        PAT[Patreon Client]
+    end
+
+    subgraph Renderers
+        MD[Markdown]
+        HTML[HTML]
+        PDF[PDF chromedp]
+        VID[Video ffmpeg]
+    end
+
+    subgraph Storage
+        SQLITE[(SQLite)]
+        POSTGRES[(PostgreSQL)]
+    end
+
+    subgraph Observability
+        PROM[Prometheus /metrics]
+        GRAF[Grafana Dashboard]
+        PPROF[pprof /debug/pprof]
+    end
+
+    CLI --> ORCH
+    SRV --> ORCH
+    SRV --> |webhooks| ORCH
+
+    ORCH --> FILT
+    ORCH --> GH & GL & GF & GV
+    ORCH --> LLM
+    ORCH --> PAT
+    ORCH --> AUDIT
+    ORCH --> MD & HTML & PDF & VID
+    ORCH --> SQLITE
+    ORCH --> POSTGRES
+
+    SRV --> PROM
+    SRV --> PPROF
+    PROM --> GRAF

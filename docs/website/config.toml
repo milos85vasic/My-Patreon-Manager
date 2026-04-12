@@ -13,8 +13,8 @@ enableEmoji = true
   weight = 1
 
 [[menu.main]]
-  name = "Docs"
-  url = "/docs/"
+  name = "Quickstart"
+  url = "/guides/quickstart/"
   weight = 2
 
 [[menu.main]]
@@ -23,8 +23,8 @@ enableEmoji = true
   weight = 3
 
 [[menu.main]]
-  name = "API"
-  url = "/api/"
+  name = "Manuals"
+  url = "/manuals/"
   weight = 4
 
 [[menu.main]]
@@ -33,9 +33,29 @@ enableEmoji = true
   weight = 5
 
 [[menu.main]]
+  name = "ADRs"
+  url = "/adr/"
+  weight = 6
+
+[[menu.main]]
+  name = "Runbooks"
+  url = "/runbooks/"
+  weight = 7
+
+[[menu.main]]
+  name = "API"
+  url = "/api/"
+  weight = 8
+
+[[menu.main]]
+  name = "Video Course"
+  url = "/video/"
+  weight = 9
+
+[[menu.main]]
   name = "GitHub"
   url = "https://github.com/milos85vasic/My-Patreon-Manager"
-  weight = 6
+  weight = 10
 
 # Parameters
 [params]

@@ -1,0 +1,87 @@
+erDiagram
+    REPOSITORIES ||--o{ SYNC_STATES : has
+    REPOSITORIES ||--o{ GENERATED_CONTENT : produces
+    REPOSITORIES ||--o{ MIRROR_MAPS : groups
+    REPOSITORIES ||--o{ POSTS : publishes
+    GENERATED_CONTENT ||--o{ POSTS : creates
+    CONTENT_TEMPLATES ||--o{ GENERATED_CONTENT : renders
+
+    REPOSITORIES {
+        text id PK
+        text provider
+        text owner
+        text name
+        text full_name UK
+        text clone_url
+        text default_branch
+        boolean is_mirror
+        boolean is_fork
+        boolean is_private
+        timestamp last_activity_at
+        jsonb metadata
+    }
+
+    SYNC_STATES {
+        text id PK
+        text repository_id FK
+        text patreon_post_id
+        timestamp last_sync_at
+        text last_commit_sha
+        text last_content_hash
+        text status
+        text checkpoint
+    }
+
+    MIRROR_MAPS {
+        text id PK
+        text mirror_group_id
+        text repository_id FK
+        boolean is_canonical
+        real similarity_score
+    }
+
+    GENERATED_CONTENT {
+        text id PK
+        text repository_id FK
+        text template_id FK
+        text title
+        text body
+        text content_hash
+        text tier
+        real quality_score
+        text format
+    }
+
+    CONTENT_TEMPLATES {
+        text id PK
+        text name UK
+        text content_type
+        text template_body
+        jsonb variables
+    }
+
+    POSTS {
+        text id PK
+        text repository_id FK
+        text content_id FK
+        text patreon_post_id
+        text title
+        text tier
+        text status
+        timestamp published_at
+        boolean is_manually_edited
+    }
+
+    AUDIT_ENTRIES {
+        text id PK
+        text repository_id
+        text event_type
+        text details
+        timestamp created_at
+    }
+
+    LOCKS {
+        text key PK
+        text holder
+        timestamp expires_at
+    }

@@ -1,0 +1,5 @@
+Contact: https://github.com/milos85vasic/My-Patreon-Manager/security/advisories
+Preferred-Languages: en, sr
+Canonical: https://milos85vasic.github.io/My-Patreon-Manager/.well-known/security.txt
+Policy: https://milos85vasic.github.io/My-Patreon-Manager/security/
+Expires: 2027-04-11T00:00:00.000Z
