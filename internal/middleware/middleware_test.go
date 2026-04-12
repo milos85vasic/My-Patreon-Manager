@@ -97,6 +97,29 @@ func TestAuth_AdminKeyFromEnv(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, w.Code)
 }
 
+func TestAuth_EmptyKeyFailsClosed(t *testing.T) {
+	os.Unsetenv("ADMIN_KEY")
+
+	engine := gin.New()
+	engine.Use(Auth(""))
+	engine.GET("/admin/dashboard", func(c *gin.Context) {
+		c.String(http.StatusOK, "admin")
+	})
+
+	// No key configured: should reject with 401 even with header present
+	req := httptest.NewRequest("GET", "/admin/dashboard", nil)
+	req.Header.Set("X-Admin-Key", "anything")
+	w := httptest.NewRecorder()
+	engine.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+	// No header at all -> 401
+	req = httptest.NewRequest("GET", "/admin/dashboard", nil)
+	w = httptest.NewRecorder()
+	engine.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
 func TestRequireAdminKey(t *testing.T) {
 	t.Run("explicit key happy path", func(t *testing.T) {
 		engine := gin.New()

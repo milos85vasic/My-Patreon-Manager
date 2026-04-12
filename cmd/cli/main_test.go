@@ -18,6 +18,7 @@ import (
 	"github.com/milos85vasic/My-Patreon-Manager/internal/models"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/git"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/patreon"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/services/audit"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/services/content"
 	syncsvc "github.com/milos85vasic/My-Patreon-Manager/internal/services/sync"
 	"github.com/prometheus/client_golang/prometheus"
@@ -127,6 +128,8 @@ func (m *mockOrchestrator) PublishOnly(ctx context.Context, opts syncsvc.SyncOpt
 	}
 	return &syncsvc.SyncResult{}, nil
 }
+
+func (m *mockOrchestrator) SetAuditStore(_ audit.Store) {}
 
 // mock metrics collector
 type mockMetricsCollector struct{}
@@ -485,6 +488,7 @@ func TestMain_SyncWithSchedule(t *testing.T) {
 	os.Setenv("PATREON_REFRESH_TOKEN", "dummy")
 	os.Setenv("PATREON_CAMPAIGN_ID", "dummy")
 	os.Setenv("HMAC_SECRET", "dummy")
+	os.Setenv("LLMSVERIFIER_ENDPOINT", "http://localhost:9090")
 	// mock database to succeed
 	oldNewDatabase := newDatabase
 	defer func() { newDatabase = oldNewDatabase }()
@@ -555,6 +559,7 @@ func TestMain_SyncCommand(t *testing.T) {
 	os.Setenv("PATREON_REFRESH_TOKEN", "dummy")
 	os.Setenv("PATREON_CAMPAIGN_ID", "dummy")
 	os.Setenv("HMAC_SECRET", "dummy")
+	os.Setenv("LLMSVERIFIER_ENDPOINT", "http://localhost:9090")
 	// mock database
 	oldNewDatabase := newDatabase
 	defer func() { newDatabase = oldNewDatabase }()
@@ -613,6 +618,7 @@ func TestMain_GenerateCommand(t *testing.T) {
 	os.Setenv("PATREON_REFRESH_TOKEN", "dummy")
 	os.Setenv("PATREON_CAMPAIGN_ID", "dummy")
 	os.Setenv("HMAC_SECRET", "dummy")
+	os.Setenv("LLMSVERIFIER_ENDPOINT", "http://localhost:9090")
 	// mock database
 	oldNewDatabase := newDatabase
 	defer func() { newDatabase = oldNewDatabase }()

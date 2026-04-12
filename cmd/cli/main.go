@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -17,6 +18,7 @@ import (
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/git"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/llm"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/patreon"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/services/audit"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/services/content"
 	syncsvc "github.com/milos85vasic/My-Patreon-Manager/internal/services/sync"
 )
@@ -37,6 +39,14 @@ type orchestrator interface {
 	ScanOnly(ctx context.Context, opts syncsvc.SyncOptions) ([]models.Repository, error)
 	GenerateOnly(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error)
 	PublishOnly(ctx context.Context, opts syncsvc.SyncOptions) (*syncsvc.SyncResult, error)
+	SetAuditStore(s audit.Store)
+}
+
+// dbWithRawConn is implemented by database backends that expose the
+// underlying *sql.DB (e.g. SQLiteDB, PostgresDB2). Used to wire the
+// sqlite audit store when cfg.AuditStore == "sqlite".
+type dbWithRawConn interface {
+	DB() *sql.DB
 }
 
 func main() {
@@ -110,6 +120,13 @@ func main() {
 	oauth := patreon.NewOAuth2Manager(cfg.PatreonClientID, cfg.PatreonClientSecret, cfg.PatreonAccessToken, cfg.PatreonRefreshToken)
 	patreonClient := patreon.NewClient(oauth, cfg.PatreonCampaignID)
 
+	// Validate LLMsVerifier endpoint for commands that use LLM generation.
+	if (args[0] == "sync" || args[0] == "generate") && cfg.LLMsVerifierEndpoint == "" {
+		logger.Error("LLMSVERIFIER_ENDPOINT required for content generation")
+		logger.Error("set LLMSVERIFIER_ENDPOINT or run 'patreon-manager verify' to test the connection")
+		osExit(1)
+	}
+
 	budget := content.NewTokenBudget(cfg.LLMDailyTokenBudget)
 	gate := content.NewQualityGate(cfg.ContentQualityThreshold)
 	renderers := buildRenderers(cfg)
@@ -122,6 +139,13 @@ func main() {
 	generator.SetReviewQueue(reviewQueue)
 
 	orchestrator := newOrchestrator(db, providers, patreonClient, generator, promMetrics, logger, nil)
+
+	// Wire the configured audit store backend. Default is "ring" (in-memory).
+	if cfg.AuditStore == "sqlite" {
+		if rawDB, ok := db.(dbWithRawConn); ok {
+			orchestrator.SetAuditStore(audit.NewSQLiteStore(rawDB.DB()))
+		}
+	}
 
 	syncOpts := syncsvc.SyncOptions{
 		DryRun: dryRun,

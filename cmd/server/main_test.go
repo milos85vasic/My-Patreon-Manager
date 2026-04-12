@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/config"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/database"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/handlers"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/metrics"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/middleware"
@@ -611,3 +613,147 @@ func TestMain_Error(t *testing.T) {
 	assert.True(t, mockExit.called, "osExit should be called on error")
 	assert.Equal(t, 1, mockExit.code, "exit code should be 1")
 }
+
+func TestBuildOrchestrator_NoProviders(t *testing.T) {
+	cfg := &config.Config{}
+	orch := buildOrchestrator(cfg)
+	_, isNoop := orch.(noopOrchestrator)
+	assert.True(t, isNoop, "should return noopOrchestrator when no providers configured")
+}
+
+func TestBuildOrchestrator_DBConnectFail(t *testing.T) {
+	originalNewDB := newDatabaseFn
+	defer func() { newDatabaseFn = originalNewDB }()
+	newDatabaseFn = func(driver, dsn string) database.Database {
+		return &failDB{connectErr: fmt.Errorf("db connect boom")}
+	}
+
+	cfg := &config.Config{
+		GitHubToken: "test-token",
+		DBDriver:    "sqlite",
+	}
+	orch := buildOrchestrator(cfg)
+	_, isNoop := orch.(noopOrchestrator)
+	assert.True(t, isNoop, "should return noopOrchestrator when DB connect fails")
+}
+
+func TestBuildOrchestrator_DBMigrateFail(t *testing.T) {
+	originalNewDB := newDatabaseFn
+	defer func() { newDatabaseFn = originalNewDB }()
+	newDatabaseFn = func(driver, dsn string) database.Database {
+		return &failDB{migrateErr: fmt.Errorf("migrate boom")}
+	}
+
+	cfg := &config.Config{
+		GitHubToken: "test-token",
+		DBDriver:    "sqlite",
+	}
+	orch := buildOrchestrator(cfg)
+	_, isNoop := orch.(noopOrchestrator)
+	assert.True(t, isNoop, "should return noopOrchestrator when DB migration fails")
+}
+
+func TestBuildOrchestrator_RealOrchestrator(t *testing.T) {
+	originalNewDB := newDatabaseFn
+	defer func() { newDatabaseFn = originalNewDB }()
+	newDatabaseFn = func(driver, dsn string) database.Database {
+		return &failDB{} // no errors - connect and migrate succeed
+	}
+
+	cfg := &config.Config{
+		GitHubToken:             "test-token",
+		DBDriver:                "sqlite",
+		ContentQualityThreshold: 0.75,
+		LLMDailyTokenBudget:     100000,
+	}
+	orch := buildOrchestrator(cfg)
+	_, isNoop := orch.(noopOrchestrator)
+	assert.False(t, isNoop, "should return real orchestrator when providers are available")
+}
+
+func TestBuildOrchestrator_WithLLMsVerifier(t *testing.T) {
+	originalNewDB := newDatabaseFn
+	defer func() { newDatabaseFn = originalNewDB }()
+	newDatabaseFn = func(driver, dsn string) database.Database {
+		return &failDB{}
+	}
+
+	cfg := &config.Config{
+		GitHubToken:             "test-token",
+		DBDriver:                "sqlite",
+		LLMsVerifierEndpoint:    "http://localhost:9090",
+		ContentQualityThreshold: 0.75,
+		LLMDailyTokenBudget:     100000,
+	}
+	orch := buildOrchestrator(cfg)
+	_, isNoop := orch.(noopOrchestrator)
+	assert.False(t, isNoop, "should return real orchestrator with LLM verifier")
+}
+
+func TestServerSetupProviders(t *testing.T) {
+	tests := []struct {
+		name     string
+		cfg      *config.Config
+		expected int
+	}{
+		{"no tokens", &config.Config{}, 0},
+		{"github only", &config.Config{GitHubToken: "gh"}, 1},
+		{"gitlab only", &config.Config{GitLabToken: "gl"}, 1},
+		{"gitflic only", &config.Config{GitFlicToken: "gf"}, 1},
+		{"gitverse only", &config.Config{GitVerseToken: "gv"}, 1},
+		{"all providers", &config.Config{GitHubToken: "gh", GitLabToken: "gl", GitFlicToken: "gf", GitVerseToken: "gv"}, 4},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			providers := serverSetupProviders(tt.cfg)
+			assert.Len(t, providers, tt.expected)
+		})
+	}
+}
+
+func TestRunServer_WarnsEmptyAdminKey(t *testing.T) {
+	originalNewMetricsCollector := newMetricsCollector
+	newMetricsCollector = func() metrics.MetricsCollector { return &mockMetricsCollector{} }
+	defer func() { newMetricsCollector = originalNewMetricsCollector }()
+
+	os.Unsetenv("ADMIN_KEY")
+	cfg := &config.Config{
+		GinMode:           "test",
+		Port:              0,
+		AdminKey:          "",
+		WebhookHMACSecret: "",
+	}
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelInfo}))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	err := runServer(ctx, cfg, ":0", logger)
+	assert.NoError(t, err)
+	assert.Contains(t, buf.String(), "ADMIN_KEY not set")
+	assert.Contains(t, buf.String(), "WEBHOOK_HMAC_SECRET not set")
+}
+
+// failDB is a minimal Database mock for buildOrchestrator tests.
+type failDB struct {
+	connectErr error
+	migrateErr error
+}
+
+func (f *failDB) Connect(_ context.Context, _ string) error      { return f.connectErr }
+func (f *failDB) Close() error                                    { return nil }
+func (f *failDB) Migrate(_ context.Context) error                 { return f.migrateErr }
+func (f *failDB) Repositories() database.RepositoryStore          { return nil }
+func (f *failDB) SyncStates() database.SyncStateStore             { return nil }
+func (f *failDB) MirrorMaps() database.MirrorMapStore             { return nil }
+func (f *failDB) GeneratedContents() database.GeneratedContentStore { return nil }
+func (f *failDB) ContentTemplates() database.ContentTemplateStore  { return nil }
+func (f *failDB) Posts() database.PostStore                        { return nil }
+func (f *failDB) AuditEntries() database.AuditEntryStore          { return nil }
+func (f *failDB) AcquireLock(_ context.Context, _ database.SyncLock) error { return nil }
+func (f *failDB) ReleaseLock(_ context.Context) error              { return nil }
+func (f *failDB) IsLocked(_ context.Context) (bool, *database.SyncLock, error) {
+	return false, nil, nil
+}
+func (f *failDB) BeginTx(_ context.Context) (*sql.Tx, error)      { return nil, nil }

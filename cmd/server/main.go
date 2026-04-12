@@ -19,10 +19,15 @@ import (
 
 	"github.com/milos85vasic/My-Patreon-Manager/internal/concurrency"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/config"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/database"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/handlers"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/metrics"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/middleware"
 	"github.com/milos85vasic/My-Patreon-Manager/internal/models"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/git"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/llm"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/providers/patreon"
+	"github.com/milos85vasic/My-Patreon-Manager/internal/services/content"
 	syncsvc "github.com/milos85vasic/My-Patreon-Manager/internal/services/sync"
 )
 
@@ -48,11 +53,11 @@ var (
 	newConfig                                           = config.NewConfig
 	newMetricsCollector func() metrics.MetricsCollector = func() metrics.MetricsCollector { return metrics.NewPrometheusCollector() }
 	// newOrchestrator returns the Orchestrator used by runServer to drain
-	// incoming webhook events. The default is a no-op; tests override it
-	// to capture enqueue calls, and a future cmd/server wiring step will
-	// return a real *syncsvc.Orchestrator once providers + DB are wired
-	// here.
-	newOrchestrator     = func(*config.Config) Orchestrator { return noopOrchestrator{} }
+	// incoming webhook events. The default constructs a real orchestrator
+	// from config when providers are available; falls back to noopOrchestrator
+	// with a warning when construction is not possible. Tests override this
+	// variable to inject fakes.
+	newOrchestrator = buildOrchestrator
 	setupRouterFn       = setupRouter
 	runServerFn         = runServer
 	signalNotifyContext = signal.NotifyContext
@@ -77,6 +82,15 @@ func main() {
 }
 
 func runServer(ctx context.Context, cfg *config.Config, addr string, logger *slog.Logger) error {
+	// Fail-closed warnings: surface misconfiguration at startup so
+	// operators notice before traffic arrives.
+	if cfg.AdminKey == "" && os.Getenv("ADMIN_KEY") == "" {
+		logger.Warn("ADMIN_KEY not set — admin endpoints will reject all requests")
+	}
+	if cfg.WebhookHMACSecret == "" {
+		logger.Warn("WEBHOOK_HMAC_SECRET not set — webhook endpoints will reject all requests")
+	}
+
 	metricsCollector := newMetricsCollector()
 	orch := newOrchestrator(cfg)
 	r, dedup, webhookHandler, limiter := setupRouterFn(cfg, metricsCollector, orch, logger)
@@ -240,11 +254,10 @@ func setupRouter(cfg *config.Config, metricsCollector metrics.MetricsCollector, 
 	// Signed-URL download endpoint (no auth; signature is inside the token).
 	dl := r.Group("/download")
 	dl.Use(limiter.Limit())
-	// accessHandler is intentionally constructed with nil tierGater /
-	// signedURLGenerator for now: this route exists to satisfy the wiring
-	// contract. Phase 2 Task 5+ will inject concrete access/signedurl
-	// implementations once the CLI composition root is ready.
-	accessHandler := handlers.NewAccessHandler(nil, nil, logger)
+	// accessHandler uses stub implementations that return safe errors
+	// instead of nil-pointer panics. Phase 2 Task 5+ will inject concrete
+	// access/signedurl implementations once available.
+	accessHandler := handlers.NewAccessHandler(handlers.StubTierGater(), handlers.StubURLGenerator(), logger)
 	dl.GET("/:content_id", accessHandler.Download)
 
 	// pprof behind admin auth. Uses net/http/pprof handlers directly so we
@@ -286,4 +299,77 @@ func adminAuditList(h *handlers.AdminHandler) gin.HandlerFunc {
 		}
 		c.JSON(http.StatusOK, gin.H{"entries": entries})
 	}
+}
+
+// newDatabaseFn is overridable for tests.
+var newDatabaseFn = database.NewDatabase
+
+// buildOrchestrator constructs a real *syncsvc.Orchestrator from config when
+// the required configuration (at least one git provider token) is present.
+// Falls back to noopOrchestrator with a log warning when construction is not
+// possible. The server only needs EnqueueRepo for webhook draining.
+func buildOrchestrator(cfg *config.Config) Orchestrator {
+	logger := slog.Default()
+
+	// At least one git provider must be configured for a real orchestrator.
+	providers := serverSetupProviders(cfg)
+	if len(providers) == 0 {
+		logger.Warn("no git provider tokens configured — using noop orchestrator, webhooks will be dropped")
+		return noopOrchestrator{}
+	}
+
+	// Connect database for the orchestrator.
+	db := newDatabaseFn(cfg.DBDriver, cfg.DSN())
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := db.Connect(ctx, cfg.DSN()); err != nil {
+		logger.Warn("database connect failed — using noop orchestrator", slog.String("error", err.Error()))
+		return noopOrchestrator{}
+	}
+	if err := db.Migrate(ctx); err != nil {
+		logger.Warn("database migration failed — using noop orchestrator", slog.String("error", err.Error()))
+		return noopOrchestrator{}
+	}
+
+	// Build content generator (optional — orchestrator handles nil generator).
+	var generator *content.Generator
+	if cfg.LLMsVerifierEndpoint != "" {
+		promMetrics := metrics.NewPrometheusCollector()
+		verifier := llm.NewVerifierClient(cfg.LLMsVerifierEndpoint, cfg.LLMsVerifierAPIKey, promMetrics)
+		chain := llm.NewFallbackChain([]llm.LLMProvider{verifier}, cfg.ContentQualityThreshold, promMetrics)
+		budget := content.NewTokenBudget(cfg.LLMDailyTokenBudget)
+		gate := content.NewQualityGate(cfg.ContentQualityThreshold)
+		store := db.GeneratedContents()
+		generator = content.NewGenerator(chain, budget, gate, store, promMetrics, nil)
+	}
+
+	// Wire Patreon client.
+	oauth := patreon.NewOAuth2Manager(cfg.PatreonClientID, cfg.PatreonClientSecret, cfg.PatreonAccessToken, cfg.PatreonRefreshToken)
+	patreonClient := patreon.NewClient(oauth, cfg.PatreonCampaignID)
+
+	logger.Info("real orchestrator wired for webhook processing")
+	return syncsvc.NewOrchestrator(db, providers, patreonClient, generator, nil, logger, nil)
+}
+
+// serverSetupProviders mirrors cmd/cli's setupProviders. Kept separate so the
+// server binary does not share mutable state with the CLI package.
+func serverSetupProviders(cfg *config.Config) []git.RepositoryProvider {
+	var providers []git.RepositoryProvider
+	if cfg.GitHubToken != "" {
+		tm := git.NewTokenManager(cfg.GitHubToken, cfg.GitHubTokenSecondary)
+		providers = append(providers, git.NewGitHubProvider(tm))
+	}
+	if cfg.GitLabToken != "" {
+		tm := git.NewTokenManager(cfg.GitLabToken, cfg.GitLabTokenSecondary)
+		providers = append(providers, git.NewGitLabProvider(tm, cfg.GitLabBaseURL))
+	}
+	if cfg.GitFlicToken != "" {
+		tm := git.NewTokenManager(cfg.GitFlicToken, cfg.GitFlicTokenSecondary)
+		providers = append(providers, git.NewGitFlicProvider(tm))
+	}
+	if cfg.GitVerseToken != "" {
+		tm := git.NewTokenManager(cfg.GitVerseToken, cfg.GitVerseTokenSecondary)
+		providers = append(providers, git.NewGitVerseProvider(tm))
+	}
+	return providers
 }

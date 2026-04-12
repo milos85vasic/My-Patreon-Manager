@@ -22,6 +22,12 @@ func Auth(adminKey string) gin.HandlerFunc {
 
 		path := c.Request.URL.Path
 		if len(path) >= 7 && path[:7] == "/admin/" {
+			// Fail closed: if no admin key is configured, reject all
+			// requests rather than accidentally granting access.
+			if adminKey == "" {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "admin key required"})
+				return
+			}
 			key := c.GetHeader("X-Admin-Key")
 			if key == "" {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "admin key required"})
