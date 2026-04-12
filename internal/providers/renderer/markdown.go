@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/milos85vasic/My-Patreon-Manager/internal/models"
 )
+
+var bufPool = sync.Pool{New: func() any { return new(bytes.Buffer) }}
 
 type MarkdownRenderer struct{}
 
@@ -58,8 +61,10 @@ func applyTemplateVariables(body string, content models.Content) string {
 	if err != nil {
 		return body // fallback to raw on parse error
 	}
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, content); err != nil {
+	buf := bufPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer bufPool.Put(buf)
+	if err := tmpl.Execute(buf, content); err != nil {
 		return body // fallback to raw on execution error
 	}
 	return buf.String()

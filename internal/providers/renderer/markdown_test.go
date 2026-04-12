@@ -10,6 +10,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func BenchmarkMarkdownRender(b *testing.B) {
+	r := NewMarkdownRenderer()
+	content := models.Content{
+		Title:     "Benchmark Post",
+		Body:      "Hello {{ .Title }}, model {{ .ModelUsed }}. A [broken link]() here.",
+		ModelUsed: "gpt-4",
+	}
+	opts := RenderOptions{
+		TierMapping: map[string]string{"t1": "Gold"},
+		MirrorURLs: []MirrorURL{
+			{Service: "GitHub", URL: "https://github.com/example/repo", Label: "Source"},
+		},
+	}
+	ctx := context.Background()
+	b.ResetTimer()
+	for range b.N {
+		_, _ = r.Render(ctx, content, opts)
+	}
+}
+
 func TestMarkdownRenderer_Format(t *testing.T) {
 	renderer := NewMarkdownRenderer()
 	assert.Equal(t, "markdown", renderer.Format())
