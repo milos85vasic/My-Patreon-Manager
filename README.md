@@ -75,6 +75,44 @@ The codebase follows a provider/service layering where the CLI and server are th
 | [Security](docs/security/README.md) | Security policies and baselines |
 | [Main Specification](docs/main_specification.md) | Full system specification |
 
+### Tutorials (step-by-step)
+
+| Tutorial | Description |
+|----------|-------------|
+| [First Sync](docs/guides/tutorial-first-sync.md) | Zero to first published Patreon post in 12 steps |
+| [Server Setup](docs/guides/tutorial-server-setup.md) | Start the server, configure webhooks, verify every endpoint |
+| [Security Scanning](docs/guides/tutorial-security-scanning.md) | Run every scanner locally, read findings, fix them |
+| [Testing Guide](docs/guides/tutorial-testing.md) | Run and write every test type (unit, fuzz, bench, chaos, leak) |
+| [Content Pipeline](docs/guides/tutorial-content-pipeline.md) | LLM generation, quality gates, tiers, rendering, fingerprints |
+| [Local Verification](docs/guides/local-verification.md) | 15-step pre-publish checklist with expected output |
+
+### Manuals
+
+| Manual | Description |
+|--------|-------------|
+| [End-to-End Walkthrough](docs/manuals/end-to-end.md) | Complete operator walkthrough |
+| [Admin Manual](docs/manuals/admin.md) | Webhooks, monitoring, SLOs, credential rotation |
+| [Developer Manual](docs/manuals/developer.md) | Adding providers, renderers, migrations, tests |
+| [CLI: sync](docs/manuals/subcommands/sync.md) | Full pipeline subcommand |
+| [CLI: scan](docs/manuals/subcommands/scan.md) | Discovery-only subcommand |
+| [CLI: generate](docs/manuals/subcommands/generate.md) | Content generation subcommand |
+| [CLI: validate](docs/manuals/subcommands/validate.md) | Configuration validator |
+| [CLI: publish](docs/manuals/subcommands/publish.md) | Publish pre-generated content |
+| [Deploy: Podman](docs/manuals/deployment/podman.md) | Podman + systemd integration |
+| [Deploy: Docker](docs/manuals/deployment/docker.md) | Docker + docker-compose |
+| [Deploy: systemd](docs/manuals/deployment/systemd.md) | Bare binary + systemd unit |
+| [Deploy: Kubernetes](docs/manuals/deployment/kubernetes.md) | K8s deployment + CronJob |
+| [Deploy: Binary](docs/manuals/deployment/bare-binary.md) | Cross-compile and run |
+
+### Video Course
+
+| Resource | Description |
+|----------|-------------|
+| [Course Outline](docs/video/course-outline.md) | 10-module course structure |
+| [Module Scripts](docs/video/scripts/) | Full voiceover scripts per module |
+| [Recording Checklist](docs/video/recording-checklist.md) | Before/during/after checklist |
+| [Exercise Files](examples/) | Starter files per module |
+
 ## Development
 
 ```sh
