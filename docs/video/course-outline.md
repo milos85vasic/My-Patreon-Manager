@@ -2,7 +2,14 @@
 
 **Audience**: Developers, content creators, open‑source maintainers who want to automate promotion of their repositories to Patreon.
 
-**Format**: 8 modules, ~10–15 minutes each, with hands‑on demos and downloadable configuration examples.
+**Format**: 10 modules, ~12 minutes each, with hands‑on demos and downloadable exercise files in `examples/`.
+
+**New modules (Phase 1 additions)**: Module 9 — Concurrency Patterns, Module 10 — Observability.
+
+**Full scripts**: `docs/video/scripts/moduleNN-*.md`
+**Recording checklist**: `docs/video/recording-checklist.md`
+**OBS scenes**: `docs/video/obs/scenes.json`
+**Distribution plan**: `docs/video/distribution.md`
 
 ---
 

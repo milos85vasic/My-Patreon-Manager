@@ -1,0 +1,14 @@
+{
+  "scenes": [
+    {"name": "talking-head", "sources": [{"type": "dshow_input", "name": "Webcam"}]},
+    {"name": "terminal", "sources": [{"type": "window_capture", "name": "Terminal"}]},
+    {"name": "ide", "sources": [{"type": "window_capture", "name": "Editor"}]},
+    {"name": "split-terminal-ide", "sources": [
+      {"type": "window_capture", "name": "Terminal", "position": [0, 0], "scale": 0.5},
+      {"type": "window_capture", "name": "Editor", "position": [960, 0], "scale": 0.5}
+    ]},
+    {"name": "slide", "sources": [{"type": "image_source", "name": "SlideImage"}]},
+    {"name": "browser", "sources": [{"type": "window_capture", "name": "Browser"}]},
+    {"name": "end-card", "sources": [{"type": "image_source", "name": "EndCardImage"}]}
+  ]
+}
