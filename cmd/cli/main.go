@@ -70,6 +70,7 @@ func main() {
 		fmt.Println("  generate  — run content pipeline, persist GeneratedContent; no Patreon publish")
 		fmt.Println("  publish   — publish existing generated content to Patreon with tier gating")
 		fmt.Println("  validate  — validate configuration and environment")
+		fmt.Println("  verify    — test LLMsVerifier connection, list and score all available models")
 		osExit(1)
 	}
 
@@ -113,7 +114,7 @@ func main() {
 	gate := content.NewQualityGate(cfg.ContentQualityThreshold)
 	renderers := buildRenderers(cfg)
 
-	verifier := llm.NewVerifierClient("", cfg.HMACSecret, promMetrics)
+	verifier := llm.NewVerifierClient(cfg.LLMsVerifierEndpoint, cfg.LLMsVerifierAPIKey, promMetrics)
 	fallbackChain := buildLLMChain(cfg, []llm.LLMProvider{verifier}, promMetrics)
 	store := db.GeneratedContents()
 	generator := content.NewGenerator(fallbackChain, budget, gate, store, promMetrics, renderers)
@@ -144,6 +145,8 @@ func main() {
 		runGenerate(ctx, orchestrator, syncOpts, logger)
 	case "publish":
 		runPublish(ctx, orchestrator, syncOpts, logger)
+	case "verify":
+		runVerify(ctx, cfg, promMetrics, logger)
 	default:
 		fmt.Printf("Unknown command: %s\n", args[0])
 		osExit(1)
